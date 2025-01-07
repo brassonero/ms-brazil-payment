@@ -23,6 +23,6 @@ public class SqlConstants {
                     "FROM bcb_wa_catalog ORDER BY cost DESC";
 
     public static final String SELECT_ALL_PACKAGES =
-            "SELECT conversations, cost " +
+            "SELECT package_name, conversations, cost " +
                     "FROM bcb_package_catalog ORDER BY conversations";
 }

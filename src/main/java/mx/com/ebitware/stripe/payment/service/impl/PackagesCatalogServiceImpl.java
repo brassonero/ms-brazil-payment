@@ -13,11 +13,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PackagesCatalogServiceImpl implements PackagesCatalogService {
 
-    private final PackagesCatalogRepository repository;
+    private final PackagesCatalogRepository packagesCatalogRepository;
 
     @Override
     @Transactional(readOnly = true)
     public List<PackagesCatalogResponse> getAllPackages() {
-        return repository.findAllPackages();
+        return packagesCatalogRepository.findAllPackages();
     }
 }
