@@ -21,6 +21,6 @@ public class FormSubmissionController {
     public ResponseEntity<String> submitForm(@Valid @RequestBody FormSubmissionRequest form
             /*, @RequestParam("logo") MultipartFile logo*/) {
         formSubmissionService.saveSubmission(form, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Submission successfully");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Successful submission");
     }
 }

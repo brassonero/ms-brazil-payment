@@ -18,7 +18,7 @@ public class PricesCatalogController {
     private final PricesCatalogService pricesCatalogService;
 
     @GetMapping("/catalog")
-    public ResponseEntity<List<PricesCatalogResponse>> getWaPricing() {
+    public ResponseEntity<List<PricesCatalogResponse>> getPrices() {
         return ResponseEntity.ok(pricesCatalogService.getAllPricing());
     }
 }

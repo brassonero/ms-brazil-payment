@@ -18,7 +18,7 @@ public class PlansCatalogController {
     private final PlansCatalogService plansCatalogService;
 
     @GetMapping("/catalog")
-    public ResponseEntity<List<PlansCatalogResponse>> getPlansCatalog() {
+    public ResponseEntity<List<PlansCatalogResponse>> getPlans() {
         return ResponseEntity.ok(plansCatalogService.getAllPlans());
     }
 }
