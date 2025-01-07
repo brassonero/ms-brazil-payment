@@ -1,7 +1,7 @@
 package mx.com.ebitware.stripe.payment.repository;
 
 import lombok.RequiredArgsConstructor;
-import mx.com.ebitware.stripe.payment.model.PricesCatalogResponse;
+import mx.com.ebitware.stripe.payment.model.PricesDTO;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -16,14 +16,14 @@ public class PricesCatalogRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    private final RowMapper<PricesCatalogResponse> pricingRowMapper = (rs, rowNum) ->
-            PricesCatalogResponse.builder()
+    private final RowMapper<PricesDTO> pricingRowMapper = (rs, rowNum) ->
+            PricesDTO.builder()
                     .templateType(rs.getString("template_type"))
                     .cost(rs.getDouble("cost"))
                     .free(rs.getBoolean("is_free"))
                     .build();
 
-    public List<PricesCatalogResponse> findAllPricing() {
+    public List<PricesDTO> findAllPricing() {
         return jdbcTemplate.query(SELECT_ALL_WA_PRICES, pricingRowMapper);
     }
 }

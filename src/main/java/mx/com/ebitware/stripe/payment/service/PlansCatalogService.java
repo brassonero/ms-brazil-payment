@@ -2,8 +2,8 @@ package mx.com.ebitware.stripe.payment.service;
 
 import mx.com.ebitware.stripe.payment.model.PlansCatalogResponse;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface PlansCatalogService {
-    List<PlansCatalogResponse> getAllPlans();
+    CompletableFuture<PlansCatalogResponse> getCatalog();
 }

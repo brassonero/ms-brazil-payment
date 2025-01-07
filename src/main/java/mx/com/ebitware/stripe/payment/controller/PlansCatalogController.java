@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,7 +18,8 @@ public class PlansCatalogController {
     private final PlansCatalogService plansCatalogService;
 
     @GetMapping("/catalog")
-    public ResponseEntity<List<PlansCatalogResponse>> getPlans() {
-        return ResponseEntity.ok(plansCatalogService.getAllPlans());
+    public CompletableFuture<ResponseEntity<PlansCatalogResponse>> getCatalog() {
+        return plansCatalogService.getCatalog()
+                .thenApply(ResponseEntity::ok);
     }
 }
