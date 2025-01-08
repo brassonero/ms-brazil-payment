@@ -9,10 +9,10 @@
 		<relativePath/>
 	</parent>
 	<groupId>mx.com.e-bitware.stripe.payment</groupId>
-	<artifactId>ms-stripe-payment</artifactId>
+	<artifactId>ms-brazil-payment</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ms-stripe-payment</name>
-	<description>ms-stripe-payment</description>
+	<description>ms-brazil-payment</description>
 	<properties>
 		<java.version>17</java.version>
 		<spring-cloud.version>2021.0.4</spring-cloud.version>
@@ -101,7 +101,7 @@
 		<dependency>
 			<groupId>com.stripe</groupId>
 			<artifactId>stripe-java</artifactId>
-			<version>22.0.0</version> <!-- Use the latest version -->
+			<version>22.0.0</version>
 		</dependency>
 	</dependencies>
 
@@ -131,7 +131,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<!-- Add this new plugin -->
 			<plugin>
 				<groupId>org.sonarsource.scanner.maven</groupId>
 				<artifactId>sonar-maven-plugin</artifactId>
