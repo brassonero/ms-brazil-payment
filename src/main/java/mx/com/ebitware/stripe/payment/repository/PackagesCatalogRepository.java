@@ -18,6 +18,7 @@ public class PackagesCatalogRepository {
 
     private final RowMapper<PackagesCatalogResponse> packageMapper = (rs, rowNum) ->
             PackagesCatalogResponse.builder()
+                    .packageName(rs.getString("package_name"))
                     .conversations(rs.getInt("conversations"))
                     .cost(rs.getDouble("cost"))
                     .build();

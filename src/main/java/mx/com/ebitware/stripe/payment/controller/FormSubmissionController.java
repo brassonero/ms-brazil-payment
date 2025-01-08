@@ -3,6 +3,7 @@ package mx.com.ebitware.stripe.payment.controller;
 import lombok.RequiredArgsConstructor;
 import mx.com.ebitware.stripe.payment.model.FormSubmissionRequest;
 import mx.com.ebitware.stripe.payment.service.FormSubmissionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,6 @@ public class FormSubmissionController {
     public ResponseEntity<String> submitForm(@Valid @RequestBody FormSubmissionRequest form
             /*, @RequestParam("logo") MultipartFile logo*/) {
         formSubmissionService.saveSubmission(form, null);
-        return ResponseEntity.ok("Form submitted successfully");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Successful submission");
     }
 }

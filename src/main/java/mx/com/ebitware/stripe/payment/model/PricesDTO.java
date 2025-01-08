@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class PricesCatalogResponse {
+public class PricesDTO {
     private String templateType;
     private double cost;
     private boolean free;

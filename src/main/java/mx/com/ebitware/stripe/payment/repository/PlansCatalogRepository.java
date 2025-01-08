@@ -1,7 +1,7 @@
 package mx.com.ebitware.stripe.payment.repository;
 
 import lombok.RequiredArgsConstructor;
-import mx.com.ebitware.stripe.payment.model.PlansCatalogResponse;
+import mx.com.ebitware.stripe.payment.model.PlansDTO;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -16,8 +16,8 @@ public class PlansCatalogRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    private final RowMapper<PlansCatalogResponse> planRowMapper = (rs, rowNum) ->
-            PlansCatalogResponse.builder()
+    private final RowMapper<PlansDTO> planRowMapper = (rs, rowNum) ->
+            PlansDTO.builder()
                     .planName(rs.getString("plan_name"))
                     .omniChannelPlatform(rs.getBoolean("omnichannel_platform"))
                     .onboardingFee(rs.getDouble("onboarding_fee"))
@@ -34,7 +34,7 @@ public class PlansCatalogRepository {
                     .supportEnabled(rs.getBoolean("support_enabled"))
                     .build();
 
-    public List<PlansCatalogResponse> findAllPlans() {
+    public List<PlansDTO> findAllPlans() {
         return jdbcTemplate.query(SELECT_ALL_PLANS, planRowMapper);
     }
 }
