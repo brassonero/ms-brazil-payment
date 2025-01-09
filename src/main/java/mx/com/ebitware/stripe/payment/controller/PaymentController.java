@@ -22,7 +22,7 @@ import java.util.Map;
 public class PaymentController {
 
     private static final String STRIPE_SECRET_KEY = "sk_test_51QeiWQQL0OOvl0KQX3CXSLCYeuY9o1lMgOOINRrTGdgRhfC0f7R2GmNhCPVIPL5f7O0WtndYS8SFrk0eHrM9DCOk00tZKkEHNB";
-    private static final long DEFAULT_AMOUNT = 2000L; // $20.00 in cents
+    private static final long DEFAULT_AMOUNT = 2000L; // $20.00
 
     public PaymentController() {
         Stripe.apiKey = STRIPE_SECRET_KEY;
@@ -32,7 +32,6 @@ public class PaymentController {
     public ResponseEntity<?> processPayment(@RequestBody Map<String, Object> payload) {
         log.info("Received payment request");
 
-        // Validate the token
         String stripeToken = (String) payload.get("stripeToken");
         if (stripeToken == null || stripeToken.isEmpty()) {
             log.error("Stripe token is missing");
@@ -84,11 +83,5 @@ public class PaymentController {
                             "message", "An unexpected error occurred"
                     ));
         }
-    }
-
-    // Optional: Add a health check endpoint
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> healthCheck() {
-        return ResponseEntity.ok(Map.of("status", "up"));
     }
 }
