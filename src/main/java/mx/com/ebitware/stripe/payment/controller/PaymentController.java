@@ -44,19 +44,16 @@ public class PaymentController {
         }
 
         try {
-            // Create the charge parameters
             Map<String, Object> chargeParams = new HashMap<>();
             chargeParams.put("amount", DEFAULT_AMOUNT);
             chargeParams.put("currency", "usd");
             chargeParams.put("source", stripeToken);
             chargeParams.put("description", "Test Payment");
 
-            // Create the charge
             log.info("Creating charge for token: {}", stripeToken);
             Charge charge = Charge.create(chargeParams);
             log.info("Charge created successfully: {}", charge.getId());
 
-            // Return success response
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "transactionId", charge.getId(),
