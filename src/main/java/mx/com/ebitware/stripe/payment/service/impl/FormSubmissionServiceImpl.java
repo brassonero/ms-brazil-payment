@@ -1,21 +1,85 @@
 package mx.com.ebitware.stripe.payment.service.impl;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import io.minio.*;
+import io.minio.errors.*;
+import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import mx.com.ebitware.stripe.payment.model.FormSubmissionRequest;
 import mx.com.ebitware.stripe.payment.repository.FormSubmissionRepository;
 import mx.com.ebitware.stripe.payment.service.FormSubmissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class FormSubmissionServiceImpl implements FormSubmissionService {
 
     private final FormSubmissionRepository formSubmissionRepository;
+    private final MinioClient minioClient;
 
     @Override
     @Transactional
     public void saveSubmission(FormSubmissionRequest form, String logoUrl) {
         formSubmissionRepository.saveSubmissionForm(form, logoUrl);
+    }
+
+    @Override
+    public String uploadFile(MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream()) {
+            String fileName = file.getOriginalFilename();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket("logos")
+                            .object(fileName)
+                            .stream(inputStream, file.getSize(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+            return "File uploaded successfully: " + fileName;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error uploading file: " + e.getMessage();
+        }
+    }
+
+    @Override
+    public List<String> listObjects() {
+        List<String> objects = new ArrayList<>();
+        try {
+            Iterable<Result<Item>> results = minioClient.listObjects(
+                    ListObjectsArgs.builder().bucket("logos").build()
+            );
+
+            for (Result<Item> result : results) {
+                objects.add(result.get().objectName());
+            }
+        } catch (MinioException e) {
+            e.printStackTrace();
+        } catch (JsonMappingException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+        return objects;
+    }
+
+    @Override
+    public InputStream downloadFile(String fileName) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        return minioClient.getObject(
+                GetObjectArgs.builder().bucket("logos").object(fileName).build()
+        );
     }
 }
