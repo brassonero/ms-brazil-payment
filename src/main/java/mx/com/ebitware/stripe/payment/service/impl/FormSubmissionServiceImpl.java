@@ -18,6 +18,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +36,7 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
     @Override
     public String uploadFile(MultipartFile file) {
         try (InputStream inputStream = file.getInputStream()) {
-            String fileName = file.getOriginalFilename();
+            String fileName = generateUniqueFileName(Objects.requireNonNull(file.getOriginalFilename()));
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket("logos")
@@ -44,11 +45,17 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
                             .contentType(file.getContentType())
                             .build()
             );
-            return "File uploaded successfully: " + fileName;
+            return fileName;
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error uploading file: " + e.getMessage();
+            throw new RuntimeException("Error uploading file: " + e.getMessage(), e);
         }
+    }
+
+    private String generateUniqueFileName(String originalFilename) {
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String extension = originalFilename.substring(
+                originalFilename.lastIndexOf("."));
+        return timestamp + extension;
     }
 
     @Override
