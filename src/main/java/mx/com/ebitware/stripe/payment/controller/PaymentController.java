@@ -13,7 +13,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/v1/payments")
 @CrossOrigin(
         origins = {"http://localhost:5173", "http://127.0.0.1:5173"},
         allowedHeaders = {"Content-Type", "Accept", "Authorization", "Origin"},
@@ -22,7 +22,8 @@ import java.util.Map;
 public class PaymentController {
 
     private static final String STRIPE_SECRET_KEY = "sk_test_51QeiWQQL0OOvl0KQX3CXSLCYeuY9o1lMgOOINRrTGdgRhfC0f7R2GmNhCPVIPL5f7O0WtndYS8SFrk0eHrM9DCOk00tZKkEHNB";
-    private static final long DEFAULT_AMOUNT = 2000L; // $20.00
+    private static final long MIN_AMOUNT = 50L; // $0.50
+    private static final long MAX_AMOUNT = 20000000L; // $10,000.00
 
     public PaymentController() {
         Stripe.apiKey = STRIPE_SECRET_KEY;
@@ -32,25 +33,37 @@ public class PaymentController {
     public ResponseEntity<?> processPayment(@RequestBody Map<String, Object> payload) {
         log.info("Received payment request");
 
+        // Validate stripe token
         String stripeToken = (String) payload.get("stripeToken");
         if (stripeToken == null || stripeToken.isEmpty()) {
             log.error("Stripe token is missing");
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of(
-                            "status", "error",
-                            "message", "Stripe token is required"
-                    ));
+            return createErrorResponse(HttpStatus.BAD_REQUEST, "Stripe token is required");
+        }
+
+        // Validate and extract amount
+        Long amount = validateAndExtractAmount(payload);
+        if (amount == null) {
+            return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid amount provided");
+        }
+
+        // Validate amount range
+        if (amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
+            log.error("Amount {} is outside allowed range", amount);
+            return createErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("Amount must be between $%.2f and $%.2f", MIN_AMOUNT / 100.0, MAX_AMOUNT / 100.0)
+            );
         }
 
         try {
+            // Create charge parameters
             Map<String, Object> chargeParams = new HashMap<>();
-            chargeParams.put("amount", DEFAULT_AMOUNT);
-            chargeParams.put("currency", "usd");
+            chargeParams.put("amount", amount);
+            chargeParams.put("currency", "mxn");
             chargeParams.put("source", stripeToken);
-            chargeParams.put("description", "Test Payment");
+            chargeParams.put("description", "Dynamic Amount Payment");
 
-            log.info("Creating charge for token: {}", stripeToken);
+            log.info("Creating charge for token: {} with amount: {}", stripeToken, amount);
             Charge charge = Charge.create(chargeParams);
             log.info("Charge created successfully: {}", charge.getId());
 
@@ -64,21 +77,50 @@ public class PaymentController {
 
         } catch (StripeException e) {
             log.error("Stripe error occurred: {}", e.getMessage());
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of(
-                            "status", "error",
-                            "message", e.getMessage(),
-                            "code", e.getCode()
-                    ));
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
         } catch (Exception e) {
             log.error("Unexpected error occurred: {}", e.getMessage());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(
-                            "status", "error",
-                            "message", "An unexpected error occurred"
-                    ));
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
         }
+    }
+
+    private Long validateAndExtractAmount(Map<String, Object> payload) {
+        try {
+            Object amountObj = payload.get("amount");
+            if (amountObj == null) {
+                log.error("Amount is missing from payload");
+                return null;
+            }
+
+            if (amountObj instanceof Integer) {
+                return ((Integer) amountObj).longValue();
+            } else if (amountObj instanceof Long) {
+                return (Long) amountObj;
+            } else if (amountObj instanceof Double) {
+                return Math.round((Double) amountObj);
+            } else if (amountObj instanceof String) {
+                return Math.round(Double.parseDouble((String) amountObj));
+            }
+
+            log.error("Unsupported amount type: {}", amountObj.getClass());
+            return null;
+        } catch (NumberFormatException e) {
+            log.error("Failed to parse amount: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private ResponseEntity<?> createErrorResponse(HttpStatus status, String message) {
+        return createErrorResponse(status, message, null);
+    }
+
+    private ResponseEntity<?> createErrorResponse(HttpStatus status, String message, String code) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", message);
+        if (code != null) {
+            response.put("code", code);
+        }
+        return ResponseEntity.status(status).body(response);
     }
 }

@@ -4,15 +4,18 @@ import lombok.RequiredArgsConstructor;
 import mx.com.ebitware.stripe.payment.model.PackagesCatalogResponse;
 import mx.com.ebitware.stripe.payment.service.PackagesCatalogService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/packages")
+@CrossOrigin(
+        origins = {"http://localhost:5173", "http://127.0.0.1:5173"},
+        allowedHeaders = {"Content-Type", "Accept", "Authorization", "Origin"},
+        methods = {RequestMethod.GET, RequestMethod.OPTIONS}
+)
 public class PackagesCatalogController {
 
     private final PackagesCatalogService packagesCatalogService;

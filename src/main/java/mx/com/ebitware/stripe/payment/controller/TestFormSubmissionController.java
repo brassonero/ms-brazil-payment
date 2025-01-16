@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/forms")
-public class FormSubmissionController {
+public class TestFormSubmissionController {
 
     private final FormSubmissionService formSubmissionService;
 
