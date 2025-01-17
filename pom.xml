@@ -11,10 +11,10 @@
 	</parent>
 
 	<groupId>mx.com.e-bitware.stripe.payment</groupId>
-	<artifactId>ms-brazil-payment</artifactId>
+	<artifactId>chatbot-payment-brl</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>ms-brazil-payment</name>
-	<description>ms-brazil-payment</description>
+	<name>chatbot-payment-brl</name>
+	<description>chatbot-payment-brl</description>
 
 	<properties>
 		<java.version>17</java.version>

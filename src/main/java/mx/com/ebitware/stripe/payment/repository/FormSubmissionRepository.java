@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import java.util.HashMap;
 import java.util.Map;
 
+import static mx.com.ebitware.stripe.payment.constants.SqlConstants.CHECK_EMAIL_EXISTS;
 import static mx.com.ebitware.stripe.payment.constants.SqlConstants.INSERT_FORM_SUBMISSION;
 
 @Repository
@@ -32,5 +33,13 @@ public class FormSubmissionRepository {
         params.put("logoUrl", logoUrl);
 
         jdbcTemplate.update(INSERT_FORM_SUBMISSION, params);
+    }
+
+    public boolean emailExists(String email) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("email", email);
+
+        Integer count = jdbcTemplate.queryForObject(CHECK_EMAIL_EXISTS, params, Integer.class);
+        return count != null && count > 0;
     }
 }

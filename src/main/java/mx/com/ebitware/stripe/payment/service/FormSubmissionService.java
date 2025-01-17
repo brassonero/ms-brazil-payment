@@ -16,4 +16,5 @@ public interface FormSubmissionService {
     String uploadFile(MultipartFile file);
     List<String> listObjects();
     InputStream downloadFile(String fileName) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException;
+    boolean isEmailAvailable(String email);
 }

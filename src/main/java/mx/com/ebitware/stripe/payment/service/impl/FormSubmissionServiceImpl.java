@@ -89,4 +89,9 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
                 GetObjectArgs.builder().bucket("logos").object(fileName).build()
         );
     }
+
+    @Override
+    public boolean isEmailAvailable(String email) {
+        return !formSubmissionRepository.emailExists(email);
+    }
 }
