@@ -13,7 +13,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/v1/payments")
+@RequestMapping("/api/payments")
 @CrossOrigin(
         origins = {"http://localhost:5173", "http://127.0.0.1:5173"},
         allowedHeaders = {"Content-Type", "Accept", "Authorization", "Origin"},
@@ -23,7 +23,7 @@ public class PaymentController {
 
     private static final String STRIPE_SECRET_KEY = "sk_test_51QeiWQQL0OOvl0KQX3CXSLCYeuY9o1lMgOOINRrTGdgRhfC0f7R2GmNhCPVIPL5f7O0WtndYS8SFrk0eHrM9DCOk00tZKkEHNB";
     private static final long MIN_AMOUNT = 50L; // $0.50
-    private static final long MAX_AMOUNT = 20000000L; // $10,000.00
+    private static final long MAX_AMOUNT = 20000000L; // $10000
 
     public PaymentController() {
         Stripe.apiKey = STRIPE_SECRET_KEY;

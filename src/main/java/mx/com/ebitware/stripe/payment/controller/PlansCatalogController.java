@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/plans")
+@RequestMapping("/api/plans")
 public class PlansCatalogController {
 
     private final PlansCatalogService plansCatalogService;
