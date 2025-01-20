@@ -30,13 +30,6 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
     private final MinioClient minioClient;
     private final EmailService emailService;
     private final ConfirmationTokenService confirmationTokenService;
-/*
-    @Override
-    @Transactional
-    public void saveSubmission(FormSubmissionRequest form, String logoUrl) {
-        formSubmissionRepository.saveSubmissionForm(form, logoUrl);
-    }
- */
 
     @Override
     @Transactional

@@ -43,19 +43,4 @@ public class EmailServiceImpl implements EmailService {
             throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
         }
     }
-/*
-    } catch (MailSendException e) {
-        // Check if it's the MailHog specific error
-        if (e.getMessage().contains("452 Unable to store message")) {
-            // This is expected with MailHog, log as success
-            log.info("Email processed by MailHog for: {}", to);
-            return; // Don't throw exception as this is expected
-        }
-        log.error("Failed to send email to: {}", to, e);
-        throw new RuntimeException("Failed to send email", e);
-    } catch (Exception e) {
-        log.error("Failed to send email to: {}", to, e);
-        throw new RuntimeException("Failed to send email", e);
-    }
-*/
 }
