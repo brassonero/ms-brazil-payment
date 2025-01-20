@@ -7,6 +7,8 @@ import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import mx.com.ebitware.stripe.payment.model.FormSubmissionRequest;
 import mx.com.ebitware.stripe.payment.repository.FormSubmissionRepository;
+import mx.com.ebitware.stripe.payment.service.ConfirmationTokenService;
+import mx.com.ebitware.stripe.payment.service.EmailService;
 import mx.com.ebitware.stripe.payment.service.FormSubmissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +28,42 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
 
     private final FormSubmissionRepository formSubmissionRepository;
     private final MinioClient minioClient;
-
+    private final EmailService emailService;
+    private final ConfirmationTokenService confirmationTokenService;
+/*
     @Override
     @Transactional
     public void saveSubmission(FormSubmissionRequest form, String logoUrl) {
         formSubmissionRepository.saveSubmissionForm(form, logoUrl);
+    }
+ */
+
+    @Override
+    @Transactional
+    public void saveSubmission(FormSubmissionRequest form, String logoUrl) {
+
+        formSubmissionRepository.saveSubmissionForm(form, logoUrl);
+
+        String token = confirmationTokenService.generateToken();
+        confirmationTokenService.saveToken(form.getCorporateEmail(), token);
+
+        String confirmationUrl = "http://localhost:8080/api/email/confirm?token=" + token;
+        String emailBody = String.format(
+                "Hello %s,\n\n" +
+                        "Thank you for your submission. Please click the link below to confirm your email:\n" +
+                        "%s\n\n" +
+                        "This link will expire in 24 hours.\n\n" +
+                        "Best regards,\n" +
+                        "Your Application Team",
+                form.getDisplayName(),
+                confirmationUrl
+        );
+
+        emailService.sendEmail(
+                form.getCorporateEmail(),
+                "Confirm your email address",
+                emailBody
+        );
     }
 
     @Override

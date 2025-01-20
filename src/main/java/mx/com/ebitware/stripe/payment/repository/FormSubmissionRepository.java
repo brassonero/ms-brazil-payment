@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import mx.com.ebitware.stripe.payment.model.FormSubmissionRequest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,5 +42,43 @@ public class FormSubmissionRepository {
 
         Integer count = jdbcTemplate.queryForObject(CHECK_EMAIL_EXISTS, params, Integer.class);
         return count != null && count > 0;
+    }
+
+    private static final String SAVE_TOKEN =
+            "UPDATE chatbot.brl_form_submission " +
+                    "SET confirmation_token = :token, " +
+                    "token_expiry = :expiry, " +
+                    "confirmation_sent_at = CURRENT_TIMESTAMP " +
+                    "WHERE corporate_email = :email";
+
+    public void saveConfirmationToken(String email, String token, LocalDateTime expiry) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("email", email);
+        params.put("token", token);
+        params.put("expiry", expiry);
+
+        jdbcTemplate.update(SAVE_TOKEN, params);
+    }
+
+    private static final String VALIDATE_TOKEN =
+            "UPDATE chatbot.brl_form_submission " +
+                    "SET email_confirmed = true, " +
+                    "confirmed_at = CURRENT_TIMESTAMP, " +
+                    "updated_at = CURRENT_TIMESTAMP " +
+                    "WHERE confirmation_token = :token " +
+                    "AND token_expiry > CURRENT_TIMESTAMP " +
+                    "AND email_confirmed = false " +
+                    "AND confirmation_token IS NOT NULL " +
+                    "RETURNING corporate_email";
+
+    public String validateToken(String token) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("token", token);
+
+        try {
+            return jdbcTemplate.queryForObject(VALIDATE_TOKEN, params, String.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
