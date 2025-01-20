@@ -31,22 +31,4 @@ public class EmailController {
                     .body("Failed to send email: " + e.getMessage());
         }
     }
-
-    @PostMapping("/send-with-attachment")
-    public ResponseEntity<String> sendEmailWithAttachment(
-            @RequestBody EmailWithAttachmentRequest request) {
-        try {
-            emailService.sendEmailWithAttachment(
-                    request.getTo(),
-                    request.getSubject(),
-                    request.getBody(),
-                    request.getAttachmentPath()
-            );
-            return ResponseEntity.ok("Email with attachment sent successfully");
-        } catch (Exception e) {
-            log.error("Error sending email with attachment", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to send email with attachment: " + e.getMessage());
-        }
-    }
 }
