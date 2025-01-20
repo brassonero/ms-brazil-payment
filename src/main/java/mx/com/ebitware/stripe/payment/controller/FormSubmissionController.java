@@ -12,7 +12,7 @@ import javax.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/forms")
+@RequestMapping("/forms")
 public class FormSubmissionController {
 
     private final FormSubmissionService formSubmissionService;

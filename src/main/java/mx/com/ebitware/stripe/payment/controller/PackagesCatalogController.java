@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/packages")
+@RequestMapping("/packages")
 @CrossOrigin(
         origins = {"http://localhost:5173", "http://127.0.0.1:5173"},
         allowedHeaders = {"Content-Type", "Accept", "Authorization", "Origin"},

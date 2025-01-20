@@ -13,7 +13,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/payments")
 @CrossOrigin(
         origins = {"http://localhost:5173", "http://127.0.0.1:5173"},
         allowedHeaders = {"Content-Type", "Accept", "Authorization", "Origin"},
