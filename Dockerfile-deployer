@@ -1,0 +1,15 @@
+FROM docker:dind
+
+WORKDIR /app
+
+COPY . /app
+
+RUN apk update && apk upgrade
+
+RUN apk --no-cache add openjdk17-jre
+
+RUN java -version
+
+RUN apk add maven
+
+ENTRYPOINT ["tail", "-f", "/dev/null"]
