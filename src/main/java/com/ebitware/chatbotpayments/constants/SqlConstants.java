@@ -28,4 +28,22 @@ public class SqlConstants {
 
     public static final String CHECK_EMAIL_EXISTS =
             "SELECT COUNT(*) FROM chatbot.brl_form_submission WHERE corporate_email = :email";
+
+    private static final String FIND_BY_EMAIL_SQL = """
+        SELECT 
+            p.id,
+            p.first_name,
+            p.last_name, 
+            p.second_last_name,
+            p.username,
+            p.email,
+            p.first_login,
+            p.company_id,
+            p.role_id,
+            p.is_super
+            %s
+        FROM person p
+        WHERE LOWER(p.email) = LOWER(:email)
+        AND p.deleted_at IS NULL
+    """;
 }

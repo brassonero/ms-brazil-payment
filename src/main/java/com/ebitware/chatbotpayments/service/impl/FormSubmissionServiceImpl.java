@@ -40,7 +40,7 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
         String token = confirmationTokenService.generateToken();
         confirmationTokenService.saveToken(form.getCorporateEmail(), token);
 
-        String confirmationUrl = "http://localhost:8080/api/email/confirm?token=" + token;
+        String confirmationUrl = "https://management-dev.broadcasterbot.com/paymentsApi/email/confirm?token=" + token;
         String emailBody = String.format(
                 "Hello %s,\n\n" +
                         "Thank you for your submission. Please click the link below to confirm your email:\n" +
