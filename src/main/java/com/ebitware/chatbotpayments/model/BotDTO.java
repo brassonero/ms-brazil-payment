@@ -8,4 +8,6 @@ public class BotDTO {
     private String port;
     private String customMessage;
     private String message;
+    private String status;
+    private String botChannel = "default_channel";
 }
