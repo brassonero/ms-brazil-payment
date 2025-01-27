@@ -1,8 +1,8 @@
 package com.ebitware.chatbotpayments.controller;
 
 import com.ebitware.chatbotpayments.model.CompanyRequest;
-import com.ebitware.chatbotpayments.model.CompanyResponse;
-import com.ebitware.chatbotpayments.service.CompanyService;
+import com.ebitware.chatbotpayments.model.CompanyClientResponse;
+import com.ebitware.chatbotpayments.service.CompanyClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CompanyClientController {
 
-    private final CompanyService companyService;
+    private final CompanyClientService companyClientService;
 
     @PostMapping
-    public ResponseEntity<CompanyResponse> createCompany(
+    public ResponseEntity<CompanyClientResponse> createCompany(
             @RequestHeader("Authorization") String authorization,
             @RequestBody CompanyRequest request) {
-        CompanyResponse response = companyService.createCompany(request, authorization);
+        CompanyClientResponse response = companyClientService.createCompany(request, authorization);
         return ResponseEntity.ok(response);
     }
 }

@@ -7,10 +7,9 @@ import java.time.ZonedDateTime;
 
 @Data
 @Builder
-public class CompanyResponse {
+public class UserResponseDTO {
     private Long id;
     private boolean active;
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
-    private UserResponseDTO user;
 }

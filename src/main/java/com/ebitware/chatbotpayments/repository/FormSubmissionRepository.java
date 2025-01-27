@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.ebitware.chatbotpayments.constants.SqlConstants.CHECK_EMAIL_EXISTS;
-import static com.ebitware.chatbotpayments.constants.SqlConstants.INSERT_FORM_SUBMISSION;
+import static com.ebitware.chatbotpayments.constants.SqlConstants.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -40,7 +39,7 @@ public class FormSubmissionRepository {
         Map<String, Object> params = new HashMap<>();
         params.put("email", email);
 
-        Integer count = jdbcTemplate.queryForObject(CHECK_EMAIL_EXISTS, params, Integer.class);
+        Integer count = jdbcTemplate.queryForObject(CHECK_EMAIL_EXISTS_DEPRECATED, params, Integer.class);
         return count != null && count > 0;
     }
 
