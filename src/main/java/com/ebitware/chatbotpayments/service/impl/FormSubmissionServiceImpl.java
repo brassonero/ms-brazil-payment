@@ -6,7 +6,7 @@ import io.minio.errors.*;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import com.ebitware.chatbotpayments.model.FormSubmissionRequest;
-import com.ebitware.chatbotpayments.repository.FormSubmissionRepository;
+import com.ebitware.chatbotpayments.repository.billing.FormSubmissionRepository;
 import com.ebitware.chatbotpayments.service.ConfirmationTokenService;
 import com.ebitware.chatbotpayments.service.EmailService;
 import com.ebitware.chatbotpayments.service.FormSubmissionService;

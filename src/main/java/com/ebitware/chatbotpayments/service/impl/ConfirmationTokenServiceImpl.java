@@ -1,7 +1,7 @@
 package com.ebitware.chatbotpayments.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import com.ebitware.chatbotpayments.repository.FormSubmissionRepository;
+import com.ebitware.chatbotpayments.repository.billing.FormSubmissionRepository;
 import com.ebitware.chatbotpayments.service.ConfirmationTokenService;
 import org.springframework.stereotype.Service;
 

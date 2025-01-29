@@ -12,11 +12,16 @@ public class SqlConstants {
                     ":facebookManagerNo, :phone, :address, :vertical, :logoUrl)";
 
     public static final String SELECT_ALL_PLANS =
-            "SELECT plan_name, omnichannel_platform, onboarding_fee, monthly_fee, " +
-                    "whatsapp_conversations, fb_messenger_enabled, ig_messenger_enabled, " +
-                    "web_chat_enabled, included_agents, extra_agent_fee, mass_templates_enabled, " +
-                    "wizard_bot_enabled, api_integration_enabled, support_enabled " +
-                    "FROM chatbot.brl_plan_catalog ORDER BY monthly_fee";
+            "SELECT id, plan_name, setup_fee, " +
+                    "monthly_total_fee, monthly_fee, monthly_setup_per_agent, monthly_extra_agent_fee, " +
+                    "annual_total_fee, annual_fee, annual_setup_per_agent, annual_extra_agent_fee, " +
+                    "included_agents, wizard_bot_enabled, support_hours, " +
+                    "monthly_mobile_app_fee, monthly_bot_conversation_history_fee, monthly_web_chat_fee, " +
+                    "monthly_apple_messages_fee, monthly_auto_conversation_assignment_fee, monthly_whatsapp_api_fee, " +
+                    "monthly_historical_backup_fee, annual_mobile_app_fee, annual_bot_conversation_history_fee, " +
+                    "annual_web_chat_fee, annual_apple_messages_fee, annual_auto_conversation_assignment_fee, " +
+                    "annual_whatsapp_api_fee, annual_historical_backup_fee " +
+                    "FROM chatbot.brl_plan_catalog ORDER BY monthly_total_fee";
 
     public static final String SELECT_ALL_WA_PRICES =
             "SELECT template_type, cost, is_free " +
@@ -108,4 +113,10 @@ public class SqlConstants {
             AND deleted_at IS NULL
             ORDER BY username DESC
             """;
+
+    public static final String SELECT_COMPANY_BY_ID =
+            "SELECT id, active, created_at, updated_at FROM chatbot.company WHERE id = :companyId";
+
+    public static final String SELECT_PERSON_BY_COMPANY_ID =
+            "SELECT id, active, created_at, updated_at FROM chatbot.person WHERE company_id = :companyId";
 }

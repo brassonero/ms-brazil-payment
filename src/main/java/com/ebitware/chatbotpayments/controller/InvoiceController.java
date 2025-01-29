@@ -25,7 +25,7 @@ public class InvoiceController {
 
     private final InvoiceService service;
 
-    @Value("${stripe.secret.key}")
+    @Value("${stripe.secret-key}")
     private String stripeSecretKey;
 
     @PostMapping("/create")

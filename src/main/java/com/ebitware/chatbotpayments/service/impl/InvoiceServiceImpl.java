@@ -3,7 +3,7 @@ package com.ebitware.chatbotpayments.service.impl;
 import lombok.RequiredArgsConstructor;
 import com.ebitware.chatbotpayments.model.InvoiceDTO;
 import com.ebitware.chatbotpayments.model.InvoceRequest;
-import com.ebitware.chatbotpayments.repository.InvoiceRepository;
+import com.ebitware.chatbotpayments.repository.billing.InvoiceRepository;
 import com.ebitware.chatbotpayments.service.InvoiceService;
 import org.springframework.stereotype.Service;
 

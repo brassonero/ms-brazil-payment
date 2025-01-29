@@ -2,7 +2,7 @@ package com.ebitware.chatbotpayments.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import com.ebitware.chatbotpayments.model.PackagesCatalogResponse;
-import com.ebitware.chatbotpayments.repository.PackagesCatalogRepository;
+import com.ebitware.chatbotpayments.repository.billing.PackagesCatalogRepository;
 import com.ebitware.chatbotpayments.service.PackagesCatalogService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
