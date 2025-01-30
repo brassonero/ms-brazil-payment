@@ -10,14 +10,12 @@ import java.time.OffsetDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class BrlPrice {
+public class BrlCustomer {
     private Long id;
-    private String stripePriceId;
-    private Long productId;
-    private String stripeProductId;
-    private Double unitAmount;
-    private String currency;
-    private String interval;
+    private String stripeCustomerId;
+    private String email;
+    private String name;
+    private String defaultSource;
     private boolean active;
     private JsonNode metadata;
     private OffsetDateTime createdAt;

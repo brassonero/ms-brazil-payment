@@ -20,6 +20,9 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.ebitware.chatbotpayments.constants.SqlConstants.FIND_PRICE_BY_ID;
+import static com.ebitware.chatbotpayments.constants.SqlConstants.INSERT_PRICE;
+
 @Repository
 public class BrlPriceRepository {
 
@@ -30,14 +33,6 @@ public class BrlPriceRepository {
     }
 
     public BrlPrice save(BrlPrice price) {
-        String sql = """
-            INSERT INTO chatbot.brl_prices 
-            (stripe_price_id, product_id, stripe_product_id, unit_amount, currency, 
-             interval_type, active, metadata)
-            VALUES (:stripePriceId, :productId, :stripeProductId, :unitAmount, :currency,
-                    :interval, :active, CAST(:metadata AS jsonb))
-            RETURNING id, created_at, updated_at
-            """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("stripePriceId", price.getStripePriceId())
@@ -50,7 +45,7 @@ public class BrlPriceRepository {
                 .addValue("metadata", convertMetadataToString(price.getMetadata()));
 
         try {
-            Map<String, Object> result = jdbcTemplate.queryForMap(sql, params);
+            Map<String, Object> result = jdbcTemplate.queryForMap(INSERT_PRICE, params);
 
             price.setId((Long) result.get("id"));
 
@@ -96,7 +91,7 @@ public class BrlPriceRepository {
                 rs.getString("stripe_price_id"),
                 rs.getLong("product_id"),
                 rs.getString("stripe_product_id"),
-                rs.getLong("unit_amount"),
+                rs.getDouble("unit_amount"),  // Changed from getLong to getDouble
                 rs.getString("currency"),
                 rs.getString("interval_type"),
                 rs.getBoolean("active"),
@@ -106,20 +101,12 @@ public class BrlPriceRepository {
         );
     }
 
-    public Optional<BrlPrice> findByProductIdAndUnitAmount(Long productId, Long unitAmount) {
-        String sql = """
-            SELECT id, stripe_price_id, product_id, stripe_product_id, unit_amount, 
-                   currency, interval_type, active, metadata, created_at, updated_at
-            FROM chatbot.brl_prices
-            WHERE product_id = :productId AND unit_amount = :unitAmount
-            """;
-
+    public Optional<BrlPrice> findById(Long id) {
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("productId", productId)
-                .addValue("unitAmount", unitAmount);
+                .addValue("id", id);
 
         try {
-            return Optional.of(jdbcTemplate.queryForObject(sql, params, this::mapRowToBrlPrice));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(FIND_PRICE_BY_ID, params, this::mapRowToBrlPrice));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }

@@ -7,7 +7,6 @@ import com.ebitware.chatbotpayments.exception.StripeApiException;
 import com.ebitware.chatbotpayments.model.CreateProductRequest;
 import com.ebitware.chatbotpayments.model.StripeProductResponse;
 import com.ebitware.chatbotpayments.repository.billing.BrlProductRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -27,12 +26,10 @@ public class BrlProductService {
 
     public BrlProduct createProduct(CreateProductRequest request) {
         try {
-            // Create form-encoded parameters for Stripe
             Map<String, String> productDetails = new HashMap<>();
             productDetails.put("name", request.getName());
             productDetails.put("description", request.getDescription());
 
-            // Add metadata if present
             if (request.getMetadata() != null) {
                 request.getMetadata().fields().forEachRemaining(entry ->
                         productDetails.put("metadata[" + entry.getKey() + "]", entry.getValue().asText())
@@ -43,7 +40,6 @@ public class BrlProductService {
             StripeProductResponse stripeResponse = stripeClient.createProduct(productDetails);
             log.debug("Received response from Stripe: {}", stripeResponse);
 
-            // Save to local database
             BrlProduct product = new BrlProduct();
             product.setStripeProductId(stripeResponse.getId());
             product.setName(request.getName());

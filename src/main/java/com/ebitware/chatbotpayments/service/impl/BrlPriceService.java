@@ -19,6 +19,7 @@ import java.util.Map;
 @Service
 @Slf4j
 public class BrlPriceService {
+
     private final StripeClient stripeClient;
     private final BrlProductRepository brlProductRepository;
     private final BrlPriceRepository brlPriceRepository;
@@ -33,16 +34,14 @@ public class BrlPriceService {
 
     public BrlPrice createPrice(CreatePriceRequest request) {
         try {
-            // Verify product exists
             BrlProduct product = brlProductRepository.findById(request.getProductId())
                     .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + request.getProductId()));
 
-            // Convert reais to cents for Stripe (e.g., 188000 reais = 18800000 cents)
-            Long unitAmountInCents = request.getUnitAmount() * 100;
+            // Convert to cents while preserving decimals
+            long unitAmountInCents = Math.round(request.getUnitAmount() * 100);
 
             log.debug("Converting price from {} reais to {} cents", request.getUnitAmount(), unitAmountInCents);
 
-            // Create form-encoded parameters for Stripe
             Map<String, String> priceDetails = new HashMap<>();
             priceDetails.put("unit_amount", String.valueOf(unitAmountInCents));
             priceDetails.put("currency", request.getCurrency());
@@ -60,12 +59,11 @@ public class BrlPriceService {
             StripePriceResponse stripeResponse = stripeClient.createPrice(priceDetails);
             log.debug("Received price response from Stripe: {}", stripeResponse);
 
-            // Save to database - storing original amount in reais
             BrlPrice price = new BrlPrice();
             price.setStripePriceId(stripeResponse.getId());
             price.setProductId(product.getId());
             price.setStripeProductId(product.getStripeProductId());
-            price.setUnitAmount(request.getUnitAmount());  // Store original amount in reais (188000)
+            price.setUnitAmount(request.getUnitAmount());  // Store original decimal amount
             price.setCurrency(request.getCurrency());
             price.setInterval(request.getInterval());
             price.setActive(true);

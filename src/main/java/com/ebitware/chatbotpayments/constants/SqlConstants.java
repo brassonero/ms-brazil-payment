@@ -32,64 +32,64 @@ public class SqlConstants {
                     "FROM chatbot.brl_package_catalog ORDER BY conversations";
 
     public static final String INSERT_COMPANY = """
-        INSERT INTO chatbot.company (
-            name, key_name, mode, agents, multiple_agents, supervisors,
-            multiple_supervisors, contacts, type_workgroups, workgroups,
-            workgroups_active, active, created_at, updated_at
-        ) VALUES (
-            :name, :keyName, :mode, CAST(:agents AS INTEGER), :multipleAgents, CAST(:supervisors AS INTEGER),
-            :multipleSupervisors, CAST(:contacts AS INTEGER), :typeWorkgroups, CAST(:workgroups AS INTEGER),
-            :workgroupsActive, :active, NOW(), NOW()
-        ) RETURNING id
-        """;
+            INSERT INTO chatbot.company (
+                name, key_name, mode, agents, multiple_agents, supervisors,
+                multiple_supervisors, contacts, type_workgroups, workgroups,
+                workgroups_active, active, created_at, updated_at
+            ) VALUES (
+                :name, :keyName, :mode, CAST(:agents AS INTEGER), :multipleAgents, CAST(:supervisors AS INTEGER),
+                :multipleSupervisors, CAST(:contacts AS INTEGER), :typeWorkgroups, CAST(:workgroups AS INTEGER),
+                :workgroupsActive, :active, NOW(), NOW()
+            ) RETURNING id
+            """;
 
     public static final String INSERT_PERSON = """
-        INSERT INTO chatbot.person (
-            first_name, last_name, second_last_name,
-            username, password, email, active, first_login,
-            role_id, company_id, is_super,
-            created_at, updated_at
-        ) VALUES (
-            :firstName, :lastName, :secondLastName,
-            :username, :password, :email, true, true,
-            1, :companyId, true,
-            NOW(), NOW()
-        )
-        """;
+            INSERT INTO chatbot.person (
+                first_name, last_name, second_last_name,
+                username, password, email, active, first_login,
+                role_id, company_id, is_super,
+                created_at, updated_at
+            ) VALUES (
+                :firstName, :lastName, :secondLastName,
+                :username, :password, :email, true, true,
+                1, :companyId, true,
+                NOW(), NOW()
+            )
+            """;
 
     public static final String INSERT_COMPANY_ACCESS = """
-        INSERT INTO chatbot.company_sec_access (
-            company_id, sec_access_id, active,
-            from_system, created_at, updated_at
-        ) VALUES (
-            :companyId, :accessId, true,
-            true, NOW(), NOW()
-        )
-        """;
+            INSERT INTO chatbot.company_sec_access (
+                company_id, sec_access_id, active,
+                from_system, created_at, updated_at
+            ) VALUES (
+                :companyId, :accessId, true,
+                true, NOW(), NOW()
+            )
+            """;
 
     public static final String INSERT_WORKGROUP = """
-        INSERT INTO chatbot.workgroup (
-            name, description, company_id, active,
-            from_system, created_at, updated_at,
-            persons, is_default
-        ) VALUES (
-            'General', 'Default', :companyId, true,
-            :fromSystem, NOW(), NOW(),
-            :persons, :isDefault
-        )
-        """;
+            INSERT INTO chatbot.workgroup (
+                name, description, company_id, active,
+                from_system, created_at, updated_at,
+                persons, is_default
+            ) VALUES (
+                'General', 'Default', :companyId, true,
+                :fromSystem, NOW(), NOW(),
+                :persons, :isDefault
+            )
+            """;
 
     public static final String INSERT_BOT = """
-        INSERT INTO chatbot.bot_host (
-            name, host, port, company_id, ivr,
-            message, status, active, bot_channel,
-            created_at, updated_at
-        ) VALUES (
-            :name, :host, :port, :companyId, :ivr,
-            :message, :status, true, :botChannel,
-            NOW(), NOW()
-        )
-        """;
+            INSERT INTO chatbot.bot_host (
+                name, host, port, company_id, ivr,
+                message, status, active, bot_channel,
+                created_at, updated_at
+            ) VALUES (
+                :name, :host, :port, :companyId, :ivr,
+                :message, :status, true, :botChannel,
+                NOW(), NOW()
+            )
+            """;
 
     public static final String CHECK_EMAIL_EXISTS =
             "SELECT COUNT(*) FROM chatbot.person WHERE LOWER(email) = LOWER(:email) AND deleted_at IS NULL";
@@ -119,4 +119,48 @@ public class SqlConstants {
 
     public static final String SELECT_PERSON_BY_COMPANY_ID =
             "SELECT id, active, created_at, updated_at FROM chatbot.person WHERE company_id = :companyId";
+
+    public static final String INSERT_CUSTOMER = """
+            INSERT INTO chatbot.brl_customers 
+            (stripe_customer_id, email, name, default_source, active, metadata)
+            VALUES (:stripeCustomerId, :email, :name, :defaultSource, :active, CAST(:metadata AS jsonb))
+            RETURNING id, created_at, updated_at
+            """;
+
+    public static final String INSERT_PRICE = """
+            INSERT INTO chatbot.brl_prices 
+            (stripe_price_id, product_id, stripe_product_id, unit_amount, currency, 
+             interval_type, active, metadata)
+            VALUES (:stripePriceId, :productId, :stripeProductId, :unitAmount, :currency,
+                    :interval, :active, CAST(:metadata AS jsonb))
+            RETURNING id, created_at, updated_at
+            """;
+
+    public static final String INSERT_PRODUCT = """
+            INSERT INTO chatbot.brl_products 
+            (stripe_product_id, name, description, active, metadata)
+            VALUES (:stripeProductId, :name, :description, :active, CAST(:metadata AS jsonb))
+            RETURNING id, created_at, updated_at
+            """;
+
+    public static final String FIND_PRODUCTS_BY_ID = """
+            SELECT id, stripe_product_id, name, description, active, metadata, 
+                   created_at, updated_at
+            FROM chatbot.brl_products
+            WHERE id = :id
+            """;
+
+    public static final String FIND_CUSTOMERS_ID = """
+            SELECT id, stripe_customer_id, email, name, default_source, active, metadata, 
+                   created_at, updated_at
+            FROM chatbot.brl_customers
+            WHERE id = :id
+            """;
+
+    public static final String FIND_PRICE_BY_ID = """
+            SELECT id, stripe_price_id, product_id, stripe_product_id, unit_amount, 
+                   currency, interval_type, active, metadata, created_at, updated_at
+            FROM chatbot.brl_prices
+            WHERE id = :id
+            """;
 }

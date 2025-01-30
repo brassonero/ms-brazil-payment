@@ -20,6 +20,9 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.ebitware.chatbotpayments.constants.SqlConstants.FIND_PRODUCTS_BY_ID;
+import static com.ebitware.chatbotpayments.constants.SqlConstants.INSERT_PRODUCT;
+
 @Repository
 public class BrlProductRepository {
 
@@ -30,12 +33,6 @@ public class BrlProductRepository {
     }
 
     public BrlProduct save(BrlProduct product) {
-        String sql = """
-            INSERT INTO chatbot.brl_products 
-            (stripe_product_id, name, description, active, metadata)
-            VALUES (:stripeProductId, :name, :description, :active, CAST(:metadata AS jsonb))
-            RETURNING id, created_at, updated_at
-            """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("stripeProductId", product.getStripeProductId())
@@ -45,7 +42,7 @@ public class BrlProductRepository {
                 .addValue("metadata", convertMetadataToString(product.getMetadata()));
 
         try {
-            Map<String, Object> result = jdbcTemplate.queryForMap(sql, params);
+            Map<String, Object> result = jdbcTemplate.queryForMap(INSERT_PRODUCT, params);
 
             product.setId((Long) result.get("id"));
 
@@ -101,18 +98,12 @@ public class BrlProductRepository {
     }
 
     public Optional<BrlProduct> findById(Long id) {
-        String sql = """
-            SELECT id, stripe_product_id, name, description, active, metadata, 
-                   created_at, updated_at
-            FROM chatbot.brl_products
-            WHERE id = :id
-            """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("id", id);
 
         try {
-            return Optional.of(jdbcTemplate.queryForObject(sql, params, this::mapRowToBrlProduct));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(FIND_PRODUCTS_BY_ID, params, this::mapRowToBrlProduct));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }

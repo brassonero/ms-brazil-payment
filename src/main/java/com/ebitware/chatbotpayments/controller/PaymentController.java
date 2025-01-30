@@ -1,14 +1,21 @@
 package com.ebitware.chatbotpayments.controller;
 
+import com.ebitware.chatbotpayments.entity.BrlCustomer;
 import com.ebitware.chatbotpayments.entity.BrlPrice;
 import com.ebitware.chatbotpayments.entity.BrlProduct;
+import com.ebitware.chatbotpayments.entity.BrlSubscription;
 import com.ebitware.chatbotpayments.exception.*;
-import com.ebitware.chatbotpayments.model.ApiResponse;
+import com.ebitware.chatbotpayments.model.CreateCustomerRequest;
 import com.ebitware.chatbotpayments.model.CreatePriceRequest;
 import com.ebitware.chatbotpayments.model.CreateProductRequest;
+import com.ebitware.chatbotpayments.model.CreateSubscriptionRequest;
 import com.ebitware.chatbotpayments.service.PaymentService;
+import com.ebitware.chatbotpayments.service.impl.BrlCustomerService;
 import com.ebitware.chatbotpayments.service.impl.BrlPriceService;
 import com.ebitware.chatbotpayments.service.impl.BrlProductService;
+import com.ebitware.chatbotpayments.service.impl.BrlSubscriptionService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.StripeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +41,54 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final BrlProductService brlProductService;
     private final BrlPriceService brlPriceService;
+    private final BrlCustomerService brlCustomerService;
+    private final BrlSubscriptionService brlSubscriptionService;
+
+    @PostMapping("/customers")
+    public ResponseEntity<?> createCustomer(@Valid @RequestBody Map<String, Object> payload) {
+        log.info("Creating customer with payload: {}", payload);
+
+        try {
+            String email = validateAndGetString(payload, "email");
+            String name = validateAndGetString(payload, "name");
+            String stripeToken = validateAndGetString(payload, "stripeToken");
+
+            CreateCustomerRequest request = new CreateCustomerRequest();
+            request.setEmail(email);
+            request.setName(name);
+            request.setSource(stripeToken);
+
+            if (payload.containsKey("metadata")) {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode metadata = mapper.valueToTree(payload.get("metadata"));
+                request.setMetadata(metadata);
+            }
+
+            BrlCustomer customer = brlCustomerService.createCustomer(request);
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "customer", customer
+            ));
+
+        } catch (IllegalArgumentException e) {
+            log.error("Validation error: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (CustomerException e) {
+            log.error("Customer creation error: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error creating customer", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    private String validateAndGetString(Map<String, Object> payload, String field) {
+        Object value = payload.get(field);
+        if (value == null || !(value instanceof String) || ((String) value).trim().isEmpty()) {
+            throw new IllegalArgumentException(field + " is required");
+        }
+        return ((String) value).trim();
+    }
 
     @PostMapping
     public ResponseEntity<?> processPayment(@RequestBody Map<String, Object> payload) {
@@ -104,5 +159,27 @@ public class PaymentController {
         log.error("Stripe API error: {}", e.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(e.getMessage(), e.getStatus().value());
         return new ResponseEntity<>(errorResponse, e.getStatus());
+    }
+
+    @PostMapping("/subscriptions")
+    public ResponseEntity<?> createSubscription(@Valid @RequestBody CreateSubscriptionRequest request) {
+        log.info("Creating subscription for customer: {}, price: {}", request.getCustomerId(), request.getPriceId());
+
+        try {
+            BrlSubscription subscription = brlSubscriptionService.createSubscription(request);
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "subscription", subscription
+            ));
+        } catch (CustomerNotFoundException | PriceNotFoundException e) {
+            log.warn(e.getMessage());
+            return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (SubscriptionException e) {
+            log.error("Subscription creation error: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error creating subscription", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
     }
 }
