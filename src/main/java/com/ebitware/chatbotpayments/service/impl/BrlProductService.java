@@ -1,55 +1,39 @@
 package com.ebitware.chatbotpayments.service.impl;
 
-import com.ebitware.chatbotpayments.client.StripeClient;
 import com.ebitware.chatbotpayments.entity.BrlProduct;
 import com.ebitware.chatbotpayments.exception.ProductException;
-import com.ebitware.chatbotpayments.exception.StripeApiException;
 import com.ebitware.chatbotpayments.model.CreateProductRequest;
-import com.ebitware.chatbotpayments.model.StripeProductResponse;
 import com.ebitware.chatbotpayments.repository.billing.BrlProductRepository;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Product;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class BrlProductService {
-    private final StripeClient stripeClient;
-    private final BrlProductRepository brlProductRepository;
 
-    public BrlProductService(StripeClient stripeClient, BrlProductRepository brlProductRepository) {
-        this.stripeClient = stripeClient;
-        this.brlProductRepository = brlProductRepository;
-    }
+    private final StripeService stripeService;
+    private final BrlProductRepository brlProductRepository;
 
     public BrlProduct createProduct(CreateProductRequest request) {
         try {
-            Map<String, String> productDetails = new HashMap<>();
-            productDetails.put("name", request.getName());
-            productDetails.put("description", request.getDescription());
-
-            if (request.getMetadata() != null) {
-                request.getMetadata().fields().forEachRemaining(entry ->
-                        productDetails.put("metadata[" + entry.getKey() + "]", entry.getValue().asText())
-                );
-            }
-
-            log.debug("Sending product creation request to Stripe: {}", productDetails);
-            StripeProductResponse stripeResponse = stripeClient.createProduct(productDetails);
-            log.debug("Received response from Stripe: {}", stripeResponse);
+            log.debug("Creating product in Stripe: {}", request);
+            Product stripeProduct = stripeService.createProduct(request);
+            log.debug("Created Stripe product: {}", stripeProduct.getId());
 
             BrlProduct product = new BrlProduct();
-            product.setStripeProductId(stripeResponse.getId());
+            product.setStripeProductId(stripeProduct.getId());
             product.setName(request.getName());
             product.setDescription(request.getDescription());
             product.setActive(true);
             product.setMetadata(request.getMetadata());
 
             return brlProductRepository.save(product);
-        } catch (StripeApiException e) {
-            log.error("Stripe API error while creating product: {}", e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error while creating product: {}", e.getMessage());
             throw new ProductException("Error creating product in Stripe: " + e.getMessage(), e);
         } catch (Exception e) {
             log.error("Unexpected error while creating product", e);

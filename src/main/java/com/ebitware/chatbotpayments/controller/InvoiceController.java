@@ -18,6 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/invoices")
 @RequiredArgsConstructor
@@ -78,5 +81,18 @@ public class InvoiceController {
         return updated
                 ? ResponseEntity.ok("Billing information updated successfully.")
                 : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<Map<String, Object>> getBillingInformation() {
+        Map<String, Object> billingData = new HashMap<>();
+        billingData.put("rfc", "GOGI910412G23");
+        billingData.put("nameOrBusinessName", "Ixchel Gómez García");
+        billingData.put("taxRegime", "Moral");
+        billingData.put("cfdiUsage", "General expenses");
+        billingData.put("billingEmail", "ixchel@gmail.com");
+        billingData.put("automaticBilling", true);
+
+        return ResponseEntity.ok(billingData);
     }
 }

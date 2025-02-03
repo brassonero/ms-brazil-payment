@@ -1,110 +1,123 @@
 package com.ebitware.chatbotpayments.repository.billing;
 
 import com.ebitware.chatbotpayments.entity.BrlCustomer;
-import com.ebitware.chatbotpayments.exception.CustomerException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.ebitware.chatbotpayments.constants.SqlConstants.FIND_CUSTOMERS_ID;
-import static com.ebitware.chatbotpayments.constants.SqlConstants.INSERT_CUSTOMER;
-
 @Repository
+@Slf4j
 public class BrlCustomerRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
 
-    public BrlCustomerRepository(@Qualifier("billingDataSource") DataSource dataSource) {
+    public BrlCustomerRepository(@Qualifier("billingDataSource") DataSource dataSource, ObjectMapper objectMapper) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+        this.objectMapper = objectMapper;
     }
 
-    public BrlCustomer save(BrlCustomer customer) {
+    private class CustomerRowMapper implements RowMapper<BrlCustomer> {
+        @Override
+        public BrlCustomer mapRow(ResultSet rs, int rowNum) throws SQLException {
+            BrlCustomer brlCustomer = new BrlCustomer();
+            brlCustomer.setId(rs.getString("id"));
+            brlCustomer.setDocument(rs.getString("document"));
+            brlCustomer.setDocumentType(rs.getString("document_type"));
+            brlCustomer.setName(rs.getString("name"));
 
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("stripeCustomerId", customer.getStripeCustomerId())
-                .addValue("email", customer.getEmail())
-                .addValue("name", customer.getName())
-                .addValue("defaultSource", customer.getDefaultSource())
-                .addValue("active", customer.isActive())
-                .addValue("metadata", convertMetadataToString(customer.getMetadata()));
-
-        try {
-            Map<String, Object> result = jdbcTemplate.queryForMap(INSERT_CUSTOMER, params);
-
-            customer.setId((Long) result.get("id"));
-            Timestamp createdAt = (Timestamp) result.get("created_at");
-            Timestamp updatedAt = (Timestamp) result.get("updated_at");
-
-            customer.setCreatedAt(createdAt.toInstant().atOffset(ZoneOffset.UTC));
-            customer.setUpdatedAt(updatedAt.toInstant().atOffset(ZoneOffset.UTC));
-
-            return customer;
-        } catch (DuplicateKeyException e) {
-            if (e.getMessage().contains("unique_stripe_customer_id")) {
-                throw new CustomerException("Customer with this Stripe ID already exists");
-            } else if (e.getMessage().contains("unique_customer_email")) {
-                throw new CustomerException("Customer with this email already exists");
+            String metadataJson = rs.getString("metadata");
+            if (metadataJson != null) {
+                try {
+                    brlCustomer.setMetadata(objectMapper.readValue(metadataJson,
+                            new TypeReference<Map<String, String>>() {
+                            }));
+                } catch (JsonProcessingException e) {
+                    log.error("Error parsing metadata JSON for customer {}: {}",
+                            rs.getString("id"), e.getMessage());
+                    brlCustomer.setMetadata(new HashMap<>());
+                }
             }
-            throw e;
+
+            brlCustomer.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            brlCustomer.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+
+            return brlCustomer;
         }
     }
 
-    private BrlCustomer mapRowToCustomer(ResultSet rs, int rowNum) throws SQLException {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode metadata;
+    public void save(String customerId, String document, String documentType,
+                     String name, Map<String, String> metadata) {
+        String sql = """
+                    INSERT INTO chatbot.brl_customers (id, document, document_type, name, metadata, created_at, updated_at)
+                    VALUES (:id, :document, :documentType, :name, CAST(:metadata AS jsonb), NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE 
+                    SET document = :document,
+                        document_type = :documentType,
+                        name = :name,
+                        metadata = CAST(:metadata AS jsonb),
+                        updated_at = NOW()
+                """;
+
         try {
-            String metadataStr = rs.getString("metadata");
-            metadata = metadataStr != null ? mapper.readTree(metadataStr) : null;
+            SqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("id", customerId)
+                    .addValue("document", document)
+                    .addValue("documentType", documentType)
+                    .addValue("name", name)
+                    .addValue("metadata", objectMapper.writeValueAsString(metadata));
+
+            jdbcTemplate.update(sql, params);
         } catch (JsonProcessingException e) {
-            throw new CustomerException("Error parsing metadata JSON", e);
+            throw new RuntimeException("Error serializing metadata", e);
         }
-
-        Timestamp createdAt = rs.getTimestamp("created_at");
-        Timestamp updatedAt = rs.getTimestamp("updated_at");
-
-        return new BrlCustomer(
-                rs.getLong("id"),
-                rs.getString("stripe_customer_id"),
-                rs.getString("email"),
-                rs.getString("name"),
-                rs.getString("default_source"),
-                rs.getBoolean("active"),
-                metadata,
-                createdAt != null ? createdAt.toInstant().atOffset(ZoneOffset.UTC) : null,
-                updatedAt != null ? updatedAt.toInstant().atOffset(ZoneOffset.UTC) : null
-        );
     }
 
-    public Optional<BrlCustomer> findById(Long id) {
-
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("id", id);
+    public Optional<BrlCustomer> findById(String customerId) {
+        String sql = "SELECT * FROM chatbot.brl_customers WHERE id = :id";
 
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(FIND_CUSTOMERS_ID, params, this::mapRowToCustomer));
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql,
+                    new MapSqlParameterSource("id", customerId),
+                    new CustomerRowMapper()));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
     }
 
-    private String convertMetadataToString(JsonNode metadata) {
+    public Optional<BrlCustomer> findByDocumentAndDocumentType(String document, String documentType) {
+        String sql = """
+            SELECT * FROM chatbot.brl_customers 
+            WHERE document = :document 
+            AND document_type = :documentType
+            ORDER BY created_at DESC 
+            LIMIT 1
+            """;
+
         try {
-            return metadata != null ? new ObjectMapper().writeValueAsString(metadata) : null;
-        } catch (JsonProcessingException e) {
-            throw new CustomerException("Error converting metadata to JSON", e);
+            SqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("document", document)
+                    .addValue("documentType", documentType);
+
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql,
+                    params,
+                    new CustomerRowMapper()));
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
         }
     }
 }

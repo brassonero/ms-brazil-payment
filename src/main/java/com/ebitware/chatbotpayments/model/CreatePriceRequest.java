@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
@@ -18,7 +17,7 @@ public class CreatePriceRequest {
 
     @NotNull
     @DecimalMin(value = "0.01", message = "Unit amount must be greater than 0")
-    private Double unitAmount;  // Changed from Long to Double
+    private Double unitAmount;
 
     @NotNull
     @Pattern(regexp = "^[a-zA-Z]{3}$", message = "Currency must be a 3-letter code")

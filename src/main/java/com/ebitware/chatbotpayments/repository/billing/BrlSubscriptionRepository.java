@@ -1,78 +1,55 @@
 package com.ebitware.chatbotpayments.repository.billing;
 
-import com.ebitware.chatbotpayments.entity.BrlSubscription;
-import com.ebitware.chatbotpayments.exception.SubscriptionException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.Timestamp;
-import java.time.ZoneOffset;
 import java.util.Map;
 
-
 @Repository
+@Slf4j
 public class BrlSubscriptionRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
 
-    public BrlSubscriptionRepository(@Qualifier("billingDataSource") DataSource dataSource) {
+    public BrlSubscriptionRepository(@Qualifier("billingDataSource") DataSource dataSource, ObjectMapper objectMapper) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+        this.objectMapper = objectMapper;
     }
 
-    public BrlSubscription save(BrlSubscription subscription) {
+    public void save(String subscriptionId, String customerId, String status,
+                     String priceId, String currency, String paymentMethodId,
+                     Map<String, String> metadata) {
         String sql = """
-            INSERT INTO chatbot.brl_subscriptions 
-            (stripe_subscription_id, customer_id, stripe_customer_id, price_id, 
-             stripe_price_id, status, current_period_start, current_period_end,
-             cancel_at_period_end, metadata)
-            VALUES (:stripeSubscriptionId, :customerId, :stripeCustomerId, :priceId,
-                    :stripePriceId, :status, :currentPeriodStart, :currentPeriodEnd,
-                    :cancelAtPeriodEnd, CAST(:metadata AS jsonb))
-            RETURNING id, created_at, updated_at
-            """;
-
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("stripeSubscriptionId", subscription.getStripeSubscriptionId())
-                .addValue("customerId", subscription.getCustomerId())
-                .addValue("stripeCustomerId", subscription.getStripeCustomerId())
-                .addValue("priceId", subscription.getPriceId())
-                .addValue("stripePriceId", subscription.getStripePriceId())
-                .addValue("status", subscription.getStatus())
-                .addValue("currentPeriodStart", Timestamp.from(subscription.getCurrentPeriodStart().toInstant()))
-                .addValue("currentPeriodEnd", Timestamp.from(subscription.getCurrentPeriodEnd().toInstant()))
-                .addValue("cancelAtPeriodEnd", subscription.isCancelAtPeriodEnd())
-                .addValue("metadata", convertMetadataToString(subscription.getMetadata()));
+                    INSERT INTO chatbot.brl_subscriptions (id, customer_id, status, price_id, 
+                                             currency, payment_method_id, metadata, created_at, updated_at)
+                    VALUES (:id, :customerId, :status, :priceId, 
+                            :currency, :paymentMethodId, CAST(:metadata AS jsonb), NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE 
+                    SET status = :status,
+                        metadata = CAST(:metadata AS jsonb),
+                        updated_at = NOW()
+                """;
 
         try {
-            Map<String, Object> result = jdbcTemplate.queryForMap(sql, params);
+            SqlParameterSource params = new MapSqlParameterSource()
+                    .addValue("id", subscriptionId)
+                    .addValue("customerId", customerId)
+                    .addValue("status", status)
+                    .addValue("priceId", priceId)
+                    .addValue("currency", currency)
+                    .addValue("paymentMethodId", paymentMethodId)
+                    .addValue("metadata", objectMapper.writeValueAsString(metadata));
 
-            subscription.setId((Long) result.get("id"));
-            Timestamp createdAt = (Timestamp) result.get("created_at");
-            Timestamp updatedAt = (Timestamp) result.get("updated_at");
-
-            subscription.setCreatedAt(createdAt.toInstant().atOffset(ZoneOffset.UTC));
-            subscription.setUpdatedAt(updatedAt.toInstant().atOffset(ZoneOffset.UTC));
-
-            return subscription;
-        } catch (DuplicateKeyException e) {
-            if (e.getMessage().contains("unique_stripe_subscription_id")) {
-                throw new SubscriptionException("Subscription with this Stripe ID already exists");
-            }
-            throw e;
-        }
-    }
-
-    private String convertMetadataToString(JsonNode metadata) {
-        try {
-            return metadata != null ? new ObjectMapper().writeValueAsString(metadata) : null;
+            jdbcTemplate.update(sql, params);
         } catch (JsonProcessingException e) {
-            throw new SubscriptionException("Error converting metadata to JSON", e);
+            throw new RuntimeException("Error serializing metadata", e);
         }
     }
 }

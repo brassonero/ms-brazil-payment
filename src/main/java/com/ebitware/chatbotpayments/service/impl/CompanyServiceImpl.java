@@ -106,7 +106,6 @@ public class CompanyServiceImpl implements CompanyService {
             String subject = "Bem-vindo à CM Móvil!";
             String htmlContent = createWelcomeEmailBody(username, password);
 
-            // Set content type to HTML
             emailService.sendEmail(email, subject, htmlContent, "text/html; charset=UTF-8");
             log.info("Welcome email sent to: {}", email);
         } catch (Exception e) {

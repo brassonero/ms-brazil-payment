@@ -2,6 +2,7 @@ package com.ebitware.chatbotpayments.config;
 
 import com.ebitware.chatbotpayments.exception.CustomErrorDecoder;
 import feign.RequestInterceptor;
+import feign.codec.Encoder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,10 +27,14 @@ public class FeignConfig {
     }
 
     @Bean
+    public Encoder feignEncoder() {
+        return new StripeFormEncoder();
+    }
+
+    @Bean
     public RequestInterceptor stripeAuthenticationInterceptor() {
         return template -> {
             template.header("Authorization", "Bearer " + stripeApiKey);
-            // Ensure content type is application/x-www-form-urlencoded
             if (template.method().equals("POST")) {
                 template.header("Content-Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE);
             }

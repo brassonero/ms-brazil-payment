@@ -1,15 +1,15 @@
 package com.ebitware.chatbotpayments.service.impl;
 
-import com.ebitware.chatbotpayments.client.StripeClient;
 import com.ebitware.chatbotpayments.entity.BrlPrice;
 import com.ebitware.chatbotpayments.entity.BrlProduct;
 import com.ebitware.chatbotpayments.exception.PriceException;
 import com.ebitware.chatbotpayments.exception.ProductNotFoundException;
-import com.ebitware.chatbotpayments.exception.StripeApiException;
 import com.ebitware.chatbotpayments.model.CreatePriceRequest;
-import com.ebitware.chatbotpayments.model.StripePriceResponse;
 import com.ebitware.chatbotpayments.repository.billing.BrlPriceRepository;
 import com.ebitware.chatbotpayments.repository.billing.BrlProductRepository;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Price;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -18,19 +18,12 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class BrlPriceService {
 
-    private final StripeClient stripeClient;
+    private final StripeService stripeService;
     private final BrlProductRepository brlProductRepository;
     private final BrlPriceRepository brlPriceRepository;
-
-    public BrlPriceService(StripeClient stripeClient,
-                           BrlProductRepository brlProductRepository,
-                           BrlPriceRepository brlPriceRepository) {
-        this.stripeClient = stripeClient;
-        this.brlProductRepository = brlProductRepository;
-        this.brlPriceRepository = brlPriceRepository;
-    }
 
     public BrlPrice createPrice(CreatePriceRequest request) {
         try {
@@ -39,7 +32,6 @@ public class BrlPriceService {
 
             // Convert to cents while preserving decimals
             long unitAmountInCents = Math.round(request.getUnitAmount() * 100);
-
             log.debug("Converting price from {} reais to {} cents", request.getUnitAmount(), unitAmountInCents);
 
             Map<String, String> priceDetails = new HashMap<>();
@@ -56,11 +48,11 @@ public class BrlPriceService {
             }
 
             log.debug("Creating price in Stripe for product {}: {}", product.getId(), priceDetails);
-            StripePriceResponse stripeResponse = stripeClient.createPrice(priceDetails);
-            log.debug("Received price response from Stripe: {}", stripeResponse);
+            Price stripePrice = stripeService.createPrice(priceDetails);
+            log.debug("Created Stripe price: {}", stripePrice.getId());
 
             BrlPrice price = new BrlPrice();
-            price.setStripePriceId(stripeResponse.getId());
+            price.setStripePriceId(stripePrice.getId());
             price.setProductId(product.getId());
             price.setStripeProductId(product.getStripeProductId());
             price.setUnitAmount(request.getUnitAmount());  // Store original decimal amount
@@ -71,8 +63,8 @@ public class BrlPriceService {
 
             return brlPriceRepository.save(price);
 
-        } catch (StripeApiException e) {
-            log.error("Stripe API error while creating price: {}", e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error while creating price: {}", e.getMessage());
             throw new PriceException("Error creating price in Stripe: " + e.getMessage(), e);
         } catch (ProductNotFoundException e) {
             log.warn("Product not found while creating price: {}", e.getMessage());
