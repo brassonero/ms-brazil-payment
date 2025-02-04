@@ -1,10 +1,12 @@
 package com.ebitware.chatbotpayments.service.impl;
 
 import com.ebitware.chatbotpayments.entity.BrlCustomer;
+import com.ebitware.chatbotpayments.entity.FormSubmission;
 import com.ebitware.chatbotpayments.exception.PaymentValidationException;
 import com.ebitware.chatbotpayments.repository.billing.BrlCustomerRepository;
 import com.ebitware.chatbotpayments.repository.billing.BrlPaymentRepository;
 import com.ebitware.chatbotpayments.repository.billing.BrlSubscriptionRepository;
+import com.ebitware.chatbotpayments.repository.billing.FormSubmissionRepository;
 import com.ebitware.chatbotpayments.service.PaymentService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -30,6 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final BrlCustomerRepository brlCustomerRepository;
     private final BrlPaymentRepository brlPaymentRepository;
     private final BrlSubscriptionRepository brlSubscriptionRepository;
+    private final FormSubmissionRepository formSubmissionRepository;
 
     public PaymentServiceImpl(
             @Value("${stripe.secret-key}") String stripeSecretKey,
@@ -38,7 +41,7 @@ public class PaymentServiceImpl implements PaymentService {
             @Value("${payment.max-amount}") long maxAmount,
             BrlCustomerRepository brlCustomerRepository,
             BrlPaymentRepository brlPaymentRepository,
-            BrlSubscriptionRepository brlSubscriptionRepository
+            BrlSubscriptionRepository brlSubscriptionRepository, FormSubmissionRepository formSubmissionRepository
     ) {
         this.currency = currency;
         this.minAmount = minAmount;
@@ -46,6 +49,7 @@ public class PaymentServiceImpl implements PaymentService {
         this.brlCustomerRepository = brlCustomerRepository;
         this.brlPaymentRepository = brlPaymentRepository;
         this.brlSubscriptionRepository = brlSubscriptionRepository;
+        this.formSubmissionRepository = formSubmissionRepository;
         Stripe.apiKey = stripeSecretKey;
     }
 
@@ -94,8 +98,15 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public Map<String, Object> processPayment(Map<String, Object> payload) throws PaymentValidationException {
-        log.info("Processing payment request");
+    public Map<String, Object> processPayment(Map<String, Object> payload, Integer personId)
+            throws PaymentValidationException, StripeException {
+        log.info("Processing payment request for person ID: {}", personId);
+
+        // Validate person exists in form submission
+        Optional<FormSubmission> formSubmission = formSubmissionRepository.findByPersonId(personId);
+        if (formSubmission.isEmpty()) {
+            throw new PaymentValidationException("Invalid person_id");
+        }
 
         validateRequiredFields(payload);
 
@@ -108,8 +119,8 @@ public class PaymentServiceImpl implements PaymentService {
         validateBrazilianFields(document, documentType, cardholderName);
 
         try {
-            String customerId = getOrCreateCustomer(document, documentType, cardholderName);
-            log.info("Using customer: {}", customerId);
+            String customerId = getOrCreateCustomer(document, documentType, cardholderName, personId);
+            log.info("Using customer: {} for person: {}", customerId, personId);
 
             attachPaymentMethodToCustomer(paymentMethodId, customerId);
             log.info("Attached payment method to customer");
@@ -125,22 +136,27 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    private String getOrCreateCustomer(String document, String documentType, String cardholderName)
+    private String getOrCreateCustomer(String document, String documentType,
+                                       String cardholderName, Integer personId)
             throws StripeException {
-        Optional<BrlCustomer> existingCustomer = brlCustomerRepository.findByDocumentAndDocumentType(document, documentType);
+        Optional<BrlCustomer> existingCustomer =
+                brlCustomerRepository.findByDocumentAndDocumentType(document, documentType);
 
         if (existingCustomer.isPresent()) {
-            log.info("Found existing customer with document {} and type {}", document, documentType);
+            log.info("Found existing customer with document {} and type {}",
+                    document, documentType);
             return existingCustomer.get().getId();
         }
 
-        log.info("Creating new customer for document {} and type {}", document, documentType);
+        log.info("Creating new customer for document {} and type {}",
+                document, documentType);
         CustomerCreateParams.Builder customerParamsBuilder = CustomerCreateParams.builder()
                 .setName(cardholderName)
                 .putMetadata("tax_id_type", documentType)
                 .putMetadata("tax_id", document)
                 .putMetadata("document_type", documentType)
-                .putMetadata("customer_name", cardholderName);
+                .putMetadata("customer_name", cardholderName)
+                .putMetadata("person_id", personId.toString());
 
         Customer customer = Customer.create(customerParamsBuilder.build());
 
@@ -149,7 +165,8 @@ public class PaymentServiceImpl implements PaymentService {
                 document,
                 documentType,
                 cardholderName,
-                customer.getMetadata()
+                customer.getMetadata(),
+                personId
         );
 
         return customer.getId();

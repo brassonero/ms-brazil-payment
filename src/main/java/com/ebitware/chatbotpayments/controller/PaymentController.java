@@ -26,7 +26,7 @@ import java.util.Map;
 @RequestMapping("/payments")
 @RequiredArgsConstructor
 @CrossOrigin(
-        origins = {"http://localhost:5173", "https://admin-dev.broadcasterbot.com"},
+        origins = {"*"},
         allowedHeaders = {"Content-Type", "Accept", "Authorization", "Origin"},
         methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS}
 )
@@ -41,7 +41,18 @@ public class PaymentController {
         log.info("Received payment request");
 
         try {
-            Map<String, Object> result = paymentService.processPayment(payload);
+            if (!payload.containsKey("person_id")) {
+                return createErrorResponse(HttpStatus.BAD_REQUEST, "person_id is required");
+            }
+
+            int personId;
+            try {
+                personId = Integer.parseInt(payload.get("person_id").toString());
+            } catch (NumberFormatException e) {
+                return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid person_id format");
+            }
+
+            Map<String, Object> result = paymentService.processPayment(payload, personId);
             return ResponseEntity.ok(result);
         } catch (PaymentValidationException e) {
             log.error("Payment validation error: {}", e.getMessage());

@@ -49,16 +49,16 @@ public class CompanyRepository {
         Long companyId = createCompanyBase(request);
 
         String createUserSql = """
-            INSERT INTO chatbot.person (
-                first_name, last_name, second_last_name, username,
-                password, email, company_id, role_id,
-                created_at, updated_at, active
-            ) VALUES (
-                :firstName, :lastName, :secondLastName, :username,
-                :password, :email, :companyId, :roleId,
-                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true
-            ) RETURNING id as person_id, role_id
-            """;
+                INSERT INTO chatbot.person (
+                    first_name, last_name, second_last_name, username,
+                    password, email, company_id, role_id,
+                    created_at, updated_at, active
+                ) VALUES (
+                    :firstName, :lastName, :secondLastName, :username,
+                    :password, :email, :companyId, :roleId,
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true
+                ) RETURNING id as person_id, role_id
+                """;
 
         MapSqlParameterSource userParams = new MapSqlParameterSource()
                 .addValue("firstName", request.getUser().getFirstName())
@@ -88,16 +88,16 @@ public class CompanyRepository {
 
     private Map<String, Object> createUser(Long companyId, UserDTO user, String password, String username) {
         String sql = """
-            INSERT INTO chatbot.person (
-                first_name, last_name, second_last_name, username, 
-                password, email, company_id, role_id, 
-                created_at, updated_at
-            ) VALUES (
-                :firstName, :lastName, :secondLastName, :username,
-                :password, :email, :companyId, :roleId,
-                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            ) RETURNING id as person_id, role_id
-            """;
+                INSERT INTO chatbot.person (
+                    first_name, last_name, second_last_name, username, 
+                    password, email, company_id, role_id, 
+                    created_at, updated_at
+                ) VALUES (
+                    :firstName, :lastName, :secondLastName, :username,
+                    :password, :email, :companyId, :roleId,
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                ) RETURNING id as person_id, role_id
+                """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("firstName", user.getFirstName())

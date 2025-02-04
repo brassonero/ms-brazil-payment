@@ -12,11 +12,12 @@ public interface PaymentService {
     List<Map<String, Object>> listPaymentMethodsFormatted(String customerId)
             throws PaymentValidationException, StripeException;
 
-    Map<String, Object> processPayment(Map<String, Object> payload) throws PaymentValidationException, StripeException, JsonProcessingException;
-
     void validateAmount(Long amount) throws PaymentValidationException;
 
     Map<String, Object> listPaymentMethods(String customerId) throws PaymentValidationException, StripeException;
+
+    Map<String, Object> processPayment(Map<String, Object> payload, Integer personId)
+            throws PaymentValidationException, StripeException;
 
     Map<String, Object> getSubscriptionById(String subscriptionId)
             throws PaymentValidationException, StripeException;

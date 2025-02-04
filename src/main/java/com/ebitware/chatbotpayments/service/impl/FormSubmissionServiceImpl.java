@@ -22,28 +22,7 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
     public void saveSubmission(FormSubmissionRequest form, String logoUrl) {
 
         formSubmissionRepository.saveSubmissionForm(form, logoUrl);
-/*
-        String token = confirmationTokenService.generateToken();
-        confirmationTokenService.saveToken(form.getCorporateEmail(), token);
 
-        String confirmationUrl = "https://management-dev.broadcasterbot.com/paymentsApi/email/confirm?token=" + token;
-        String emailBody = String.format(
-                "Hello %s,\n\n" +
-                        "Thank you for your submission. Please click the link below to confirm your email:\n" +
-                        "%s\n\n" +
-                        "This link will expire in 24 hours.\n\n" +
-                        "Best regards,\n" +
-                        "Your Application Team",
-                form.getDisplayName(),
-                confirmationUrl
-        );
-
-        emailService.sendEmail(
-                form.getCorporateEmail(),
-                "Confirm your email address",
-                emailBody
-        );
- */
     }
 
     @Override
