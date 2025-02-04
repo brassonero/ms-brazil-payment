@@ -205,7 +205,6 @@ public class PaymentController {
         try {
             String receiptUrl = paymentService.getPaymentReceipt(paymentIntentId);
             if (receiptUrl != null) {
-                // Redirect to Stripe's hosted receipt URL
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .location(URI.create(receiptUrl))
                         .build();

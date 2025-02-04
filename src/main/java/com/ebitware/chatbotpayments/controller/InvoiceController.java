@@ -1,5 +1,6 @@
 package com.ebitware.chatbotpayments.controller;
 
+import com.ebitware.chatbotpayments.entity.BrlInvoice;
 import com.ebitware.chatbotpayments.model.*;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -99,7 +100,7 @@ public class InvoiceController {
     @GetMapping("/info/{email}")
     public ResponseEntity<BillingInfoResponse> getBillingInfo(@PathVariable String email) {
         try {
-            InvoiceEntity invoice = service.getBillingInfoByEmail(email);
+            BrlInvoice invoice = service.getBillingInfoByEmail(email);
             if (invoice == null) {
                 return ResponseEntity.notFound().build();
             }

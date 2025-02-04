@@ -1,6 +1,6 @@
 package com.ebitware.chatbotpayments.repository.billing;
 
-import com.ebitware.chatbotpayments.model.InvoiceEntity;
+import com.ebitware.chatbotpayments.entity.BrlInvoice;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -18,7 +18,7 @@ public class LastInvoiceRepository {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
-    public int save(InvoiceEntity invoiceEntityDTO) {
+    public int save(BrlInvoice brlInvoiceDTO) {
         String sql = """
             INSERT INTO bcb_invoice_info (
                 fiscal_regime, business_name, id_type, id_number, billing_email, phone, street, state, city, country, postal_code
@@ -27,22 +27,22 @@ public class LastInvoiceRepository {
             )
         """;
         Map<String, Object> params = new HashMap<>();
-        params.put("fiscalRegime", invoiceEntityDTO.getFiscalRegime());
-        params.put("businessName", invoiceEntityDTO.getBusinessName());
-        params.put("idType", invoiceEntityDTO.getIdType());
-        params.put("idNumber", invoiceEntityDTO.getIdNumber());
-        params.put("billingEmail", invoiceEntityDTO.getBillingEmail());
-        params.put("phone", invoiceEntityDTO.getPhone());
-        params.put("street", invoiceEntityDTO.getStreet());
-        params.put("state", invoiceEntityDTO.getState());
-        params.put("city", invoiceEntityDTO.getCity());
-        params.put("country", invoiceEntityDTO.getCountry());
-        params.put("postalCode", invoiceEntityDTO.getPostalCode());
+        params.put("fiscalRegime", brlInvoiceDTO.getFiscalRegime());
+        params.put("businessName", brlInvoiceDTO.getBusinessName());
+        params.put("idType", brlInvoiceDTO.getIdType());
+        params.put("idNumber", brlInvoiceDTO.getIdNumber());
+        params.put("billingEmail", brlInvoiceDTO.getBillingEmail());
+        params.put("phone", brlInvoiceDTO.getPhone());
+        params.put("street", brlInvoiceDTO.getStreet());
+        params.put("state", brlInvoiceDTO.getState());
+        params.put("city", brlInvoiceDTO.getCity());
+        params.put("country", brlInvoiceDTO.getCountry());
+        params.put("postalCode", brlInvoiceDTO.getPostalCode());
 
         return jdbcTemplate.update(sql, params);
     }
 
-    public int update(String email, InvoiceEntity invoiceEntityDTO) {
+    public int update(String email, BrlInvoice brlInvoiceDTO) {
         String sql = """
             UPDATE bcb_invoice_info
             SET tax_id = :taxId,
@@ -59,16 +59,16 @@ public class LastInvoiceRepository {
             WHERE billing_email = :email
         """;
         Map<String, Object> params = new HashMap<>();
-        params.put("taxId", invoiceEntityDTO.getTaxId());
-        params.put("cfdiUsage", invoiceEntityDTO.getCfdiUsage());
-        params.put("fiscalRegime", invoiceEntityDTO.getFiscalRegime());
-        params.put("businessName", invoiceEntityDTO.getBusinessName());
-        params.put("street", invoiceEntityDTO.getStreet());
-        params.put("neighborhood", invoiceEntityDTO.getNeighborhood());
-        params.put("postalCode", invoiceEntityDTO.getPostalCode());
-        params.put("country", invoiceEntityDTO.getCountry());
-        params.put("state", invoiceEntityDTO.getState());
-        params.put("city", invoiceEntityDTO.getCity());
+        params.put("taxId", brlInvoiceDTO.getTaxId());
+        params.put("cfdiUsage", brlInvoiceDTO.getCfdiUsage());
+        params.put("fiscalRegime", brlInvoiceDTO.getFiscalRegime());
+        params.put("businessName", brlInvoiceDTO.getBusinessName());
+        params.put("street", brlInvoiceDTO.getStreet());
+        params.put("neighborhood", brlInvoiceDTO.getNeighborhood());
+        params.put("postalCode", brlInvoiceDTO.getPostalCode());
+        params.put("country", brlInvoiceDTO.getCountry());
+        params.put("state", brlInvoiceDTO.getState());
+        params.put("city", brlInvoiceDTO.getCity());
         params.put("email", email);
 
         return jdbcTemplate.update(sql, params);
