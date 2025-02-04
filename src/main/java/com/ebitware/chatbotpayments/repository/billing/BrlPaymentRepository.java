@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,54 +56,29 @@ public class BrlPaymentRepository {
         }
     }
 
-    public List<Map<String, Object>> findByCustomerId(String customerId, int page, int size) {
+    public List<Map<String, Object>> findPaymentReceipts(String customerId, int page, int size) {
         int offset = page * size;
-        String sql = """
-            SELECT p.*, c.name as customer_name, c.document, c.document_type 
-            FROM chatbot.brl_payments p
-            LEFT JOIN chatbot.brl_customers c ON p.customer_id = c.id
-            WHERE p.customer_id = :customerId
-            ORDER BY p.created_at DESC
-            LIMIT :limit OFFSET :offset
-            """;
 
-        SqlParameterSource params = new MapSqlParameterSource()
-                .addValue("customerId", customerId)
+        StringBuilder sql = new StringBuilder("""
+        SELECT p.id, p.amount, p.created_at, p.status
+        FROM chatbot.brl_payments p
+        WHERE p.status = 'succeeded'
+    """);
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("limit", size)
                 .addValue("offset", offset);
 
-        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
-            Map<String, Object> payment = new HashMap<>();
-            payment.put("id", rs.getString("id"));
-            payment.put("amount", rs.getBigDecimal("amount"));
-            payment.put("currency", rs.getString("currency"));
-            payment.put("status", rs.getString("status"));
-            payment.put("payment_type", rs.getString("payment_type"));
-            payment.put("created_at", rs.getTimestamp("created_at").toInstant());
-            payment.put("customer_name", rs.getString("customer_name"));
-            payment.put("document", rs.getString("document"));
-            payment.put("document_type", rs.getString("document_type"));
+        if (customerId != null && !customerId.trim().isEmpty()) {
+            sql.append(" AND p.customer_id = :customerId");
+            params.addValue("customerId", customerId);
+        }
 
-            // Parse metadata JSON if present
-            String metadataJson = rs.getString("metadata");
-            if (metadataJson != null) {
-                try {
-                    payment.put("metadata", objectMapper.readValue(metadataJson, Map.class));
-                } catch (JsonProcessingException e) {
-                    log.error("Error parsing metadata for payment {}: {}", rs.getString("id"), e.getMessage());
-                }
-            }
+        sql.append("""
+        ORDER BY p.created_at DESC
+        LIMIT :limit OFFSET :offset
+    """);
 
-            return payment;
-        });
-    }
-
-    public long countByCustomerId(String customerId) {
-        String sql = "SELECT COUNT(*) FROM chatbot.brl_payments WHERE customer_id = :customerId";
-
-        return jdbcTemplate.queryForObject(sql,
-                new MapSqlParameterSource("customerId", customerId),
-                Long.class
-        );
+        return jdbcTemplate.queryForList(sql.toString(), params);
     }
 }

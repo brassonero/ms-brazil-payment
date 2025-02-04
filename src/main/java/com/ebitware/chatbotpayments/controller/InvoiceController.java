@@ -110,7 +110,7 @@ public class InvoiceController {
                     .regimeTributario(invoice.getFiscalRegime())
                     .usoCFDI(invoice.getCfdiUsage())
                     .emailCobranca(invoice.getBillingEmail())
-                    .facturamentoAutomatico(true) // You might want to make this dynamic based on your business logic
+                    .facturamentoAutomatico(true)
                     .build();
 
             return ResponseEntity.ok(response);

@@ -14,8 +14,6 @@ public interface PaymentService {
 
     void validateAmount(Long amount) throws PaymentValidationException;
 
-    Map<String, Object> listPaymentMethods(String customerId) throws PaymentValidationException, StripeException;
-
     Map<String, Object> processPayment(Map<String, Object> payload, Integer personId)
             throws PaymentValidationException, StripeException;
 
@@ -24,4 +22,8 @@ public interface PaymentService {
 
     Map<String, Object> cancelSubscription(String subscriptionId, boolean cancelImmediately)
             throws PaymentValidationException, StripeException;
+
+    List<Map<String, String>> getPaymentReceipts(String customerId, int page, int size) throws PaymentValidationException;
+
+    String getPaymentReceipt(String paymentIntentId) throws PaymentValidationException, StripeException;
 }

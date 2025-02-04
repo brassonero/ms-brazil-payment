@@ -18,6 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -542,54 +546,73 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    public Map<String, Object> listPaymentMethods(String customerId) throws PaymentValidationException, StripeException {
-        if (customerId == null || customerId.trim().isEmpty()) {
-            throw new PaymentValidationException("CustomerId é obrigatório");
+    @Override
+    public List<Map<String, String>> getPaymentReceipts(String customerId, int page, int size)
+            throws PaymentValidationException {
+        if (customerId != null && customerId.trim().isEmpty()) {
+            throw new PaymentValidationException("CustomerId cannot be empty if provided");
         }
 
         try {
-            PaymentMethodListParams params = PaymentMethodListParams.builder()
-                    .setCustomer(customerId)
-                    .setType(PaymentMethodListParams.Type.CARD)
-                    .build();
+            List<Map<String, Object>> payments = brlPaymentRepository.findPaymentReceipts(customerId, page, size);
 
-            PaymentMethodCollection paymentMethods = PaymentMethod.list(params);
-            List<Map<String, Object>> formattedMethods = new ArrayList<>();
+            return payments.stream()
+                    .map(payment -> {
+                        Map<String, String> receipt = new HashMap<>();
 
-            for (PaymentMethod method : paymentMethods.getData()) {
-                PaymentMethod.Card card = method.getCard();
-                if (card != null) {
-                    Map<String, Object> cardData = new HashMap<>();
-                    cardData.put("id", method.getId());
-                    cardData.put("cardType", card.getBrand());
-                    cardData.put("cardNumber", "**** **** **** " + card.getLast4());
-                    cardData.put("expiryMonth", card.getExpMonth());
-                    cardData.put("expiryYear", card.getExpYear());
-                    cardData.put("isDefault", method.getId().equals(getDefaultPaymentMethod(customerId)));
+                        // Format date
+                        LocalDateTime dateTime = ((Timestamp) payment.get("created_at")).toLocalDateTime();
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
+                        receipt.put("date", dateTime.format(formatter));
 
-                    PaymentMethod.BillingDetails billing = method.getBillingDetails();
-                    if (billing != null && billing.getName() != null) {
-                        cardData.put("cardholderName", billing.getName());
-                    }
+                        // Format amount
+                        BigDecimal amount = (BigDecimal) payment.get("amount");
+                        String formattedAmount = NumberFormat.getCurrencyInstance(new Locale("en", "US"))
+                                .format(amount);
+                        receipt.put("totalAmount", formattedAmount);
 
-                    formattedMethods.add(cardData);
-                }
-            }
+                        // Payment ID (Stripe payment intent ID)
+                        String paymentId = (String) payment.get("id");
+                        receipt.put("paymentId", paymentId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("customer_id", customerId);
-            response.put("payment_methods", formattedMethods);
+                        // Receipt number (last 8 chars of payment ID)
+                        String receiptNumber = paymentId.substring(Math.max(0, paymentId.length() - 8))
+                                .toUpperCase();
+                        receipt.put("receiptNumber", receiptNumber);
 
-            return response;
-        } catch (StripeException e) {
-            log.error("Error retrieving payment methods: {}", e.getMessage());
-            throw e;
+                        return receipt;
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error retrieving payment receipts", e);
+            throw new PaymentValidationException("Error retrieving payment receipts");
         }
     }
 
-    private String getDefaultPaymentMethod(String customerId) throws StripeException {
-        Customer customer = Customer.retrieve(customerId);
-        return customer.getInvoiceSettings() != null ?
-                customer.getInvoiceSettings().getDefaultPaymentMethod() : null;
+    @Override
+    public String getPaymentReceipt(String paymentIntentId) throws PaymentValidationException, StripeException {
+        if (paymentIntentId == null || paymentIntentId.trim().isEmpty()) {
+            throw new PaymentValidationException("Payment ID is required");
+        }
+
+        try {
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
+
+            if (!"succeeded".equals(paymentIntent.getStatus())) {
+                throw new PaymentValidationException("Receipt is only available for successful payments");
+            }
+
+            String chargeId = paymentIntent.getLatestCharge();
+            if (chargeId == null) {
+                throw new PaymentValidationException("No charge found for this payment");
+            }
+
+            Charge charge = Charge.retrieve(chargeId);
+            return charge.getReceiptUrl();
+
+        } catch (StripeException e) {
+            log.error("Error retrieving Stripe receipt: {}", e.getMessage());
+            throw e;
+        }
     }
 }

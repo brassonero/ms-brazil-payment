@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -117,21 +118,6 @@ public class PaymentController {
         return new ResponseEntity<>(errorResponse, e.getStatus());
     }
 
-    // TODO: Restore payment methods
-    @GetMapping("/{customerId}")
-    public ResponseEntity<?> listPaymentMethods(@PathVariable String customerId) {
-        try {
-            Map<String, Object> paymentMethods = paymentService.listPaymentMethods(customerId);
-            return ResponseEntity.ok(paymentMethods);
-        } catch (PaymentValidationException e) {
-            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (StripeException e) {
-            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
-        } catch (Exception e) {
-            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
-        }
-    }
-
     @GetMapping("/history")
     public ResponseEntity<List<Map<String, Object>>> getPaymentHistory() {
         List<Map<String, Object>> paymentHistory = new ArrayList<>();
@@ -193,6 +179,46 @@ public class PaymentController {
             return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
         } catch (Exception e) {
             log.error("Unexpected error retrieving payment methods: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @GetMapping("/receipts")
+    public ResponseEntity<?> getPaymentReceipts(
+            @RequestParam(required = false) String customerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            List<Map<String, String>> receipts = paymentService.getPaymentReceipts(customerId, page, size);
+            return ResponseEntity.ok(receipts);
+        } catch (PaymentValidationException e) {
+            log.error("Validation error retrieving receipts: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving receipts: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @GetMapping("/receipts/{paymentIntentId}/download")
+    public ResponseEntity<?> downloadReceipt(@PathVariable String paymentIntentId) {
+        try {
+            String receiptUrl = paymentService.getPaymentReceipt(paymentIntentId);
+            if (receiptUrl != null) {
+                // Redirect to Stripe's hosted receipt URL
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create(receiptUrl))
+                        .build();
+            }
+            return ResponseEntity.notFound().build();
+        } catch (PaymentValidationException e) {
+            log.error("Validation error retrieving receipt: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error retrieving receipt: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving receipt: {}", e.getMessage(), e);
             return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
         }
     }

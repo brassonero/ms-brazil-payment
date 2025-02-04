@@ -44,4 +44,7 @@ public class PlansDTO {
     private Double annualAutoConversationAssignmentFee;
     private Double annualWhatsappApiFee;
     private Double annualHistoricalBackupFee;
+
+    private final String monthlyStripePrice;
+    private final String annualStripePrice;
 }

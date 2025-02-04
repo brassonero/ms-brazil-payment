@@ -20,10 +20,34 @@ public class PlansCatalogRepository {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
-    private final RowMapper<PlansDTO> planRowMapper = (rs, rowNum) ->
-            PlansDTO.builder()
+    private final RowMapper<PlansDTO> planRowMapper = (rs, rowNum) -> {
+        // TODO: Integrate price table
+        String planName = rs.getString("plan_name");
+        String monthlyStripePrice;
+        String annualStripePrice = switch (planName) {
+            case "Growth" -> {
+                monthlyStripePrice = "price_1QnL6SQL0OOvl0KQAvrlIIAU";
+                yield "price_1QnL7LQL0OOvl0KQjrQPruGk";
+            }
+            case "Business" -> {
+                monthlyStripePrice = "price_1QnL6iQL0OOvl0KQmtgqyGBh";
+                yield "price_1QnL7YQL0OOvl0KQjOn3MJ96";
+            }
+            case "Enterprise" -> {
+                monthlyStripePrice = "price_1QnL7lQL0OOvl0KQ8XcBh0Bk";
+                yield "price_1QnL6wQL0OOvl0KQisEXOTKb";
+            }
+            default -> {
+                monthlyStripePrice = null;
+                yield null;
+            }
+        };
+
+        return PlansDTO.builder()
                     .id(rs.getLong("id"))
                     .planName(rs.getString("plan_name"))
+                    .monthlyStripePrice(monthlyStripePrice)
+                    .annualStripePrice(annualStripePrice)
                     .setupFee(rs.getDouble("setup_fee"))
                     // Monthly pricing
                     .monthlyTotalFee(rs.getDouble("monthly_total_fee"))
@@ -56,6 +80,7 @@ public class PlansCatalogRepository {
                     .annualWhatsappApiFee(rs.getDouble("annual_whatsapp_api_fee"))
                     .annualHistoricalBackupFee(rs.getDouble("annual_historical_backup_fee"))
                     .build();
+    };
 
     public List<PlansDTO> findAllPlans() {
         return jdbcTemplate.query(SELECT_ALL_PLANS, planRowMapper);
