@@ -1,5 +1,6 @@
 package com.ebitware.chatbotpayments.controller;
 
+import com.ebitware.chatbotpayments.model.*;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
@@ -9,10 +10,8 @@ import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.InvoiceItemCreateParams;
 import lombok.RequiredArgsConstructor;
-import com.ebitware.chatbotpayments.model.InvoceRequest;
-import com.ebitware.chatbotpayments.model.StripeInvoiceRequest;
-import com.ebitware.chatbotpayments.model.StripeInvoiceResponse;
 import com.ebitware.chatbotpayments.service.InvoiceService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/invoices")
 @RequiredArgsConstructor
@@ -72,7 +72,7 @@ public class InvoiceController {
         boolean created = service.createBillingInfo(request);
         return created
                 ? ResponseEntity.ok("Billing information created successfully.")
-                : ResponseEntity.status(500).body("Failed to create billing information.");
+                : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create billing information.");
     }
 
     @PutMapping("/billing/{email}")
@@ -80,7 +80,7 @@ public class InvoiceController {
         boolean updated = service.updateBillingInfo(email, request);
         return updated
                 ? ResponseEntity.ok("Billing information updated successfully.")
-                : ResponseEntity.notFound().build();
+                : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Billing information not found.");
     }
 
     @GetMapping("/info")
@@ -94,5 +94,29 @@ public class InvoiceController {
         billingData.put("automaticBilling", true);
 
         return ResponseEntity.ok(billingData);
+    }
+
+    @GetMapping("/info/{email}")
+    public ResponseEntity<BillingInfoResponse> getBillingInfo(@PathVariable String email) {
+        try {
+            InvoiceEntity invoice = service.getBillingInfoByEmail(email);
+            if (invoice == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            BillingInfoResponse response = BillingInfoResponse.builder()
+                    .rfc(invoice.getTaxId())
+                    .nombreRazonSocial(invoice.getBusinessName())
+                    .regimeTributario(invoice.getFiscalRegime())
+                    .usoCFDI(invoice.getCfdiUsage())
+                    .emailCobranca(invoice.getBillingEmail())
+                    .facturamentoAutomatico(true) // You might want to make this dynamic based on your business logic
+                    .build();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error retrieving billing information for email: {}", email, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

@@ -1,9 +1,10 @@
 package com.ebitware.chatbotpayments.model;
 
+
 import lombok.Data;
 
 @Data
-public class InvoceRequest {
+public class InvoiceEntity {
     private String fiscalRegime;
     private String businessName;
     private String idType;
@@ -17,6 +18,6 @@ public class InvoceRequest {
     private String postalCode;
     private String taxId;
     private String cfdiUsage;
-    private AddressDTO address;
+    private String neighborhood;
     private Integer personId;
 }

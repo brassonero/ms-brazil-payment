@@ -1,7 +1,7 @@
 package com.ebitware.chatbotpayments.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import com.ebitware.chatbotpayments.model.InvoiceDTO;
+import com.ebitware.chatbotpayments.model.InvoiceEntity;
 import com.ebitware.chatbotpayments.model.InvoceRequest;
 import com.ebitware.chatbotpayments.repository.billing.InvoiceRepository;
 import com.ebitware.chatbotpayments.service.InvoiceService;
@@ -15,33 +15,39 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     public boolean createBillingInfo(InvoceRequest request) {
-        InvoiceDTO invoiceDTO = mapToBillingInfo(request);
-        return repository.save(invoiceDTO) > 0;
+        InvoiceEntity invoiceEntityDTO = mapToBillingInfo(request);
+        return repository.save(invoiceEntityDTO) > 0;
     }
 
     @Override
     public boolean updateBillingInfo(String email, InvoceRequest request) {
-        InvoiceDTO invoiceDTO = mapToBillingInfo(request);
-        return repository.update(email, invoiceDTO) > 0;
+        InvoiceEntity invoiceEntityDTO = mapToBillingInfo(request);
+        return repository.update(email, invoiceEntityDTO) > 0;
     }
 
     @Override
-    public InvoiceDTO mapToBillingInfo(InvoceRequest request) {
-        InvoiceDTO invoiceDTO = new InvoiceDTO();
-        invoiceDTO.setFiscalRegime(request.getFiscalRegime());
-        invoiceDTO.setBusinessName(request.getBusinessName());
-        invoiceDTO.setIdType(request.getIdType());
-        invoiceDTO.setIdNumber(request.getIdNumber());
-        invoiceDTO.setBillingEmail(request.getBillingEmail());
-        invoiceDTO.setPhone(request.getPhone());
-        invoiceDTO.setStreet(request.getAddressDTO() != null ? request.getAddressDTO().getStreet() : request.getStreet());
-        invoiceDTO.setNeighborhood(request.getAddressDTO() != null ? request.getAddressDTO().getNeighborhood() : null);
-        invoiceDTO.setPostalCode(request.getAddressDTO() != null ? request.getAddressDTO().getPostalCode() : request.getPostalCode());
-        invoiceDTO.setCountry(request.getAddressDTO() != null ? request.getAddressDTO().getCountry() : request.getCountry());
-        invoiceDTO.setState(request.getAddressDTO() != null ? request.getAddressDTO().getState() : request.getState());
-        invoiceDTO.setCity(request.getAddressDTO() != null ? request.getAddressDTO().getCity() : request.getCity());
-        invoiceDTO.setTaxId(request.getTaxId());
-        invoiceDTO.setCfdiUsage(request.getCfdiUsage());
-        return invoiceDTO;
+    public InvoiceEntity getBillingInfoByEmail(String email) {
+        return repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Billing information not found for email: " + email));
+    }
+
+    @Override
+    public InvoiceEntity mapToBillingInfo(InvoceRequest request) {
+        InvoiceEntity invoiceEntityDTO = new InvoiceEntity();
+        invoiceEntityDTO.setFiscalRegime(request.getFiscalRegime());
+        invoiceEntityDTO.setBusinessName(request.getBusinessName());
+        invoiceEntityDTO.setIdType(request.getIdType());
+        invoiceEntityDTO.setIdNumber(request.getIdNumber());
+        invoiceEntityDTO.setBillingEmail(request.getBillingEmail());
+        invoiceEntityDTO.setPhone(request.getPhone());
+        invoiceEntityDTO.setStreet(request.getAddress() != null ? request.getAddress().getStreet() : null);
+        invoiceEntityDTO.setNeighborhood(request.getAddress() != null ? request.getAddress().getNeighborhood() : null);
+        invoiceEntityDTO.setPostalCode(request.getAddress() != null ? request.getAddress().getPostalCode() : null);
+        invoiceEntityDTO.setCountry(request.getAddress() != null ? request.getAddress().getCountry() : null);
+        invoiceEntityDTO.setState(request.getAddress() != null ? request.getAddress().getState() : null);
+        invoiceEntityDTO.setCity(request.getAddress() != null ? request.getAddress().getCity() : null);
+        invoiceEntityDTO.setTaxId(request.getTaxId());
+        invoiceEntityDTO.setCfdiUsage(request.getCfdiUsage());
+        return invoiceEntityDTO;
     }
 }
