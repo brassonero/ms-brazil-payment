@@ -1,6 +1,8 @@
 package com.ebitware.chatbotpayments.repository.billing;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import com.ebitware.chatbotpayments.model.FormSubmissionRequest;
@@ -13,6 +15,7 @@ import java.util.Map;
 
 import static com.ebitware.chatbotpayments.constants.SqlConstants.*;
 
+@Slf4j
 @Repository
 public class FormSubmissionRepository {
 
@@ -82,6 +85,33 @@ public class FormSubmissionRepository {
             return jdbcTemplate.queryForObject(VALIDATE_TOKEN, params, String.class);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public void updateFormSubmissionIds(Long companyId, Long personId, Long roleId, String email) {
+        String sql = """
+            UPDATE chatbot.brl_form_submission 
+            SET company_id = :companyId,
+                person_id = :personId,
+                role_id = :roleId,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE corporate_email = :email
+              AND company_id IS NULL
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("companyId", companyId)
+                .addValue("personId", personId)
+                .addValue("roleId", roleId)
+                .addValue("email", email);
+
+        int updatedRows = jdbcTemplate.update(sql, params);
+        if (updatedRows > 0) {
+            log.info("Successfully updated form submission. companyId: {}, personId: {}, roleId: {}, email: {}",
+                    companyId, personId, roleId, email);
+        } else {
+            log.warn("No rows updated for email: {}. This could mean the record was already updated or doesn't exist.",
+                    email);
         }
     }
 }

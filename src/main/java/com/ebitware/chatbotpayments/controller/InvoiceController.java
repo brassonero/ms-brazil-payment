@@ -45,7 +45,7 @@ public class InvoiceController {
             InvoiceItemCreateParams invoiceItemParams = InvoiceItemCreateParams.builder()
                     .setCustomer(customer.getId())
                     .setAmount(request.getAmountInCents())
-                    .setCurrency("usd")
+                    .setCurrency("brl")
                     .setDescription(request.getDescription())
                     .build();
             InvoiceItem.create(invoiceItemParams);

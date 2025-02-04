@@ -1,6 +1,7 @@
 package com.ebitware.chatbotpayments.service.impl;
 
 import com.ebitware.chatbotpayments.model.*;
+import com.ebitware.chatbotpayments.repository.billing.FormSubmissionRepository;
 import com.ebitware.chatbotpayments.repository.chatbot.CompanyRepository;
 import com.ebitware.chatbotpayments.service.CompanyService;
 import com.ebitware.chatbotpayments.service.EmailService;
@@ -25,6 +26,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final StringUtil stringUtil;
     private final EmailService emailService;
+    private final FormSubmissionRepository formSubmissionRepository;
 
     @Value("${app.name:}")
     private String appName;
@@ -37,10 +39,26 @@ public class CompanyServiceImpl implements CompanyService {
         String username = createUsername(request.getUser());
         log.info("Generated password for user {}: {}", request.getUser().getEmail(), password);
 
-        Long companyId = companyRepository.createCompany(request, password, username);
+        // Create company and get IDs
+        CompanyCreationResult result = companyRepository.createCompany(request, password, username);
+
+        // Update form submission with all IDs
+        try {
+            formSubmissionRepository.updateFormSubmissionIds(
+                    result.getCompanyId(),
+                    result.getPersonId(),
+                    result.getRoleId(),
+                    request.getUser().getEmail()
+            );
+        } catch (Exception e) {
+            log.error("Error updating form submission with IDs for company {}: {}",
+                    result.getCompanyId(), e.getMessage());
+            // Don't throw exception to avoid rolling back company creation
+        }
+
         sendWelcomeEmail(request.getUser().getEmail(), username, password);
 
-        return companyId;
+        return result.getCompanyId();
     }
 
     @Override

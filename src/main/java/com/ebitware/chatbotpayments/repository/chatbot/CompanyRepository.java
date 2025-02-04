@@ -44,9 +44,35 @@ public class CompanyRepository {
     }
 
     @Transactional
-    public Long createCompany(WorkspaceDTO request, String password, String username) {
+    public CompanyCreationResult createCompany(WorkspaceDTO request, String password, String username) {
+
         Long companyId = createCompanyBase(request);
-        createUser(companyId, request.getUser(), password, username);
+
+        String createUserSql = """
+            INSERT INTO chatbot.person (
+                first_name, last_name, second_last_name, username,
+                password, email, company_id, role_id,
+                created_at, updated_at, active
+            ) VALUES (
+                :firstName, :lastName, :secondLastName, :username,
+                :password, :email, :companyId, :roleId,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true
+            ) RETURNING id as person_id, role_id
+            """;
+
+        MapSqlParameterSource userParams = new MapSqlParameterSource()
+                .addValue("firstName", request.getUser().getFirstName())
+                .addValue("lastName", request.getUser().getLastName())
+                .addValue("secondLastName", request.getUser().getSecondLastName())
+                .addValue("username", username)
+                .addValue("password", passwordEncoder.encode(password))
+                .addValue("email", request.getUser().getEmail())
+                .addValue("companyId", companyId)
+                .addValue("roleId", 1); // Default role ID for new users
+
+        Map<String, Object> result = jdbcTemplate.queryForMap(createUserSql, userParams);
+        Long personId = ((Number) result.get("person_id")).longValue();
+        Long roleId = ((Number) result.get("role_id")).longValue();
 
         if (!CompanyModeEnum.API.getCode().equals(request.getMode())) {
             createCompanyAccess(companyId, request.getAccessList());
@@ -57,7 +83,33 @@ public class CompanyRepository {
             createBots(request.getBots(), companyId, request.getTypeWorkgroups());
         }
 
-        return companyId;
+        return new CompanyCreationResult(companyId, personId, roleId);
+    }
+
+    private Map<String, Object> createUser(Long companyId, UserDTO user, String password, String username) {
+        String sql = """
+            INSERT INTO chatbot.person (
+                first_name, last_name, second_last_name, username, 
+                password, email, company_id, role_id, 
+                created_at, updated_at
+            ) VALUES (
+                :firstName, :lastName, :secondLastName, :username,
+                :password, :email, :companyId, :roleId,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            ) RETURNING id as person_id, role_id
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("firstName", user.getFirstName())
+                .addValue("lastName", user.getLastName())
+                .addValue("secondLastName", user.getSecondLastName())
+                .addValue("username", username)
+                .addValue("password", passwordEncoder.encode(password))
+                .addValue("email", user.getEmail())
+                .addValue("companyId", companyId)
+                .addValue("roleId", 1); // Default role ID, adjust as needed
+
+        return jdbcTemplate.queryForMap(sql, params);
     }
 
     private Long createCompanyBase(WorkspaceDTO request) {
@@ -76,19 +128,6 @@ public class CompanyRepository {
                 .addValue("active", request.isActive());
 
         return jdbcTemplate.queryForObject(INSERT_COMPANY, params, Long.class);
-    }
-
-    private void createUser(Long companyId, UserDTO user, String password, String username) {
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("firstName", user.getFirstName())
-                .addValue("lastName", user.getLastName())
-                .addValue("secondLastName", user.getSecondLastName())
-                .addValue("username", username)
-                .addValue("password", passwordEncoder.encode(password))
-                .addValue("email", user.getEmail())
-                .addValue("companyId", companyId);
-
-        jdbcTemplate.update(INSERT_PERSON, params);
     }
 
     private void createCompanyAccess(Long companyId, List<AccessDTO> accessList) {

@@ -1,17 +1,15 @@
 package com.ebitware.chatbotpayments.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.ZonedDateTime;
 
 @Data
-@Builder
+@AllArgsConstructor
 public class CompanyCreationResult {
     private Long companyId;
-    private Long userId;
-    private ZonedDateTime createdAt;
-    private ZonedDateTime updatedAt;
-    private ZonedDateTime userCreatedAt;
-    private ZonedDateTime userUpdatedAt;
+    private Long personId;
+    private Long roleId;
 }
