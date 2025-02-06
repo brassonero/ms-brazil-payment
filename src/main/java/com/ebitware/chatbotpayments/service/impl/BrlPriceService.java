@@ -30,7 +30,6 @@ public class BrlPriceService {
             BrlProduct product = brlProductRepository.findById(request.getProductId())
                     .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + request.getProductId()));
 
-            // Convert to cents while preserving decimals
             long unitAmountInCents = Math.round(request.getUnitAmount() * 100);
             log.debug("Converting price from {} reais to {} cents", request.getUnitAmount(), unitAmountInCents);
 
@@ -55,7 +54,7 @@ public class BrlPriceService {
             price.setStripePriceId(stripePrice.getId());
             price.setProductId(product.getId());
             price.setStripeProductId(product.getStripeProductId());
-            price.setUnitAmount(request.getUnitAmount());  // Store original decimal amount
+            price.setUnitAmount(request.getUnitAmount());
             price.setCurrency(request.getCurrency());
             price.setInterval(request.getInterval());
             price.setActive(true);

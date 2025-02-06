@@ -3,6 +3,7 @@ package com.ebitware.chatbotpayments.controller;
 import com.ebitware.chatbotpayments.entity.BrlPrice;
 import com.ebitware.chatbotpayments.entity.BrlProduct;
 import com.ebitware.chatbotpayments.exception.*;
+import com.ebitware.chatbotpayments.model.AddPaymentMethodRequest;
 import com.ebitware.chatbotpayments.model.CreatePriceRequest;
 import com.ebitware.chatbotpayments.model.CreateProductRequest;
 import com.ebitware.chatbotpayments.service.PaymentService;
@@ -42,15 +43,15 @@ public class PaymentController {
         log.info("Received payment request");
 
         try {
-            if (!payload.containsKey("person_id")) {
-                return createErrorResponse(HttpStatus.BAD_REQUEST, "person_id is required");
+            if (!payload.containsKey("personId")) {
+                return createErrorResponse(HttpStatus.BAD_REQUEST, "personId is required");
             }
 
             int personId;
             try {
-                personId = Integer.parseInt(payload.get("person_id").toString());
+                personId = Integer.parseInt(payload.get("personId").toString());
             } catch (NumberFormatException e) {
-                return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid person_id format");
+                return createErrorResponse(HttpStatus.BAD_REQUEST, "Invalid personId format");
             }
 
             Map<String, Object> result = paymentService.processPayment(payload, personId);
@@ -185,7 +186,7 @@ public class PaymentController {
 
     @GetMapping("/receipts")
     public ResponseEntity<?> getPaymentReceipts(
-            @RequestParam(required = false) String customerId,
+            @RequestParam String customerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
@@ -219,6 +220,20 @@ public class PaymentController {
         } catch (Exception e) {
             log.error("Unexpected error retrieving receipt: {}", e.getMessage(), e);
             return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @PostMapping("/{userId}/setup-intent")
+    public ResponseEntity<?> createSetupIntent(@PathVariable String userId) {
+        try {
+            Map<String, String> setupIntent = paymentService.createSetupIntent(userId);
+            return ResponseEntity.ok(setupIntent);
+        } catch (PaymentValidationException e) {
+            log.error("Validation error creating setup intent: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error creating setup intent: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
         }
     }
 }

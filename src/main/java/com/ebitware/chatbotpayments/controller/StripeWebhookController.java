@@ -1,7 +1,6 @@
 package com.ebitware.chatbotpayments.controller;
 
 import com.ebitware.chatbotpayments.service.impl.WebSocketService;
-import com.google.gson.Gson;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
@@ -61,6 +60,7 @@ public class StripeWebhookController {
         }
     }
 
+    // TODO: Remove mock
     @GetMapping("/{userId}/details")
     public ResponseEntity<Map<String, Object>> getSubscriptionDetails(@PathVariable String userId) {
 

@@ -20,4 +20,5 @@ public class BrlCustomer {
     private Map<String, String> metadata;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer personId;
 }

@@ -155,4 +155,25 @@ public class FormSubmissionRepository {
             return Optional.empty();
         }
     }
+
+    public int updateLogoUrl(Integer personId, String logoUrl) {
+        String sql = """
+            UPDATE chatbot.brl_form_submission 
+            SET logo_url = :logoUrl,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE person_id = :personId
+            RETURNING id
+        """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("logoUrl", logoUrl)
+                .addValue("personId", personId);
+
+        try {
+            return jdbcTemplate.queryForObject(sql, params, Integer.class);
+        } catch (Exception e) {
+            log.debug("No form submission found for person ID: {}", personId);
+            return 0;
+        }
+    }
 }

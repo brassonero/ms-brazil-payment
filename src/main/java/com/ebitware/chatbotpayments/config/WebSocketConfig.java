@@ -13,9 +13,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${cors.allowed.origins}")
+    @Value("${cors.allowed.origins:http://localhost:8080}")
     private String corsAllowedOrigins;
 
+    // TODO: Remove localhost
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         log.debug("Registering STOMP endpoint with allowed origin: {}", corsAllowedOrigins);

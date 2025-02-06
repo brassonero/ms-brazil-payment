@@ -39,10 +39,8 @@ public class CompanyServiceImpl implements CompanyService {
         String username = createUsername(request.getUser());
         log.info("Generated password for user {}: {}", request.getUser().getEmail(), password);
 
-        // Create company and get IDs
         CompanyCreationResult result = companyRepository.createCompany(request, password, username);
 
-        // Update form submission with all IDs
         try {
             formSubmissionRepository.updateFormSubmissionIds(
                     result.getCompanyId(),
@@ -53,7 +51,6 @@ public class CompanyServiceImpl implements CompanyService {
         } catch (Exception e) {
             log.error("Error updating form submission with IDs for company {}: {}",
                     result.getCompanyId(), e.getMessage());
-            // Don't throw exception to avoid rolling back company creation
         }
 
         sendWelcomeEmail(request.getUser().getEmail(), username, password);
@@ -131,6 +128,7 @@ public class CompanyServiceImpl implements CompanyService {
         }
     }
 
+    // TODO: Add SVG instead URL
     private String createWelcomeEmailBody(String username, String password) {
         return String.format("""
         <!DOCTYPE html>

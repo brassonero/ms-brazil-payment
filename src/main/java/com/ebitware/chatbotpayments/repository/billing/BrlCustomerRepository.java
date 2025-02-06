@@ -62,32 +62,44 @@ public class BrlCustomerRepository {
 
     public void save(String customerId, String document, String documentType,
                      String name, Map<String, String> metadata, Integer personId) {
+        log.info("Attempting to save customer to database - ID: {}, Document: {}, Type: {}",
+                customerId, document, documentType);
+
         String sql = """
-            INSERT INTO chatbot.brl_customers 
-            (id, document, document_type, name, metadata, person_id, created_at, updated_at)
-            VALUES (:id, :document, :documentType, :name, CAST(:metadata AS jsonb), 
-                    :personId, NOW(), NOW())
-            ON CONFLICT (id) DO UPDATE 
-            SET document = :document,
-                document_type = :documentType,
-                name = :name,
-                metadata = CAST(:metadata AS jsonb),
-                person_id = :personId,
-                updated_at = NOW()
-            """;
+        INSERT INTO chatbot.brl_customers 
+        (id, document, document_type, name, metadata, person_id, created_at, updated_at)
+        VALUES (:id, :document, :documentType, :name, CAST(:metadata AS jsonb), 
+                :personId, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE 
+        SET document = :document,
+            document_type = :documentType,
+            name = :name,
+            metadata = CAST(:metadata AS jsonb),
+            person_id = :personId,
+            updated_at = NOW()
+        """;
 
         try {
+            String metadataJson = objectMapper.writeValueAsString(metadata);
+            log.debug("Metadata JSON: {}", metadataJson);
+
             MapSqlParameterSource params = new MapSqlParameterSource()
                     .addValue("id", customerId)
                     .addValue("document", document)
                     .addValue("documentType", documentType)
                     .addValue("name", name)
-                    .addValue("metadata", objectMapper.writeValueAsString(metadata))
+                    .addValue("metadata", metadataJson)
                     .addValue("personId", personId);
 
-            jdbcTemplate.update(sql, params);
+            int result = jdbcTemplate.update(sql, params);
+            log.info("Database save result: {} rows affected", result);
+
         } catch (JsonProcessingException e) {
+            log.error("Error serializing metadata: {}", e.getMessage(), e);
             throw new RuntimeException("Error serializing metadata", e);
+        } catch (Exception e) {
+            log.error("Error executing database save: {}", e.getMessage(), e);
+            throw new RuntimeException("Error saving customer", e);
         }
     }
 

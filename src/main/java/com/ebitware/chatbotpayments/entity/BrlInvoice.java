@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class BrlInvoice {
+    private Integer id;
     private String fiscalRegime;
     private String businessName;
     private String idType;

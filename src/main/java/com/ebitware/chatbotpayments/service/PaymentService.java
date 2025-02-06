@@ -1,6 +1,7 @@
 package com.ebitware.chatbotpayments.service;
 
 import com.ebitware.chatbotpayments.exception.PaymentValidationException;
+import com.ebitware.chatbotpayments.model.AddPaymentMethodRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.stripe.exception.StripeException;
 
@@ -17,13 +18,9 @@ public interface PaymentService {
     Map<String, Object> processPayment(Map<String, Object> payload, Integer personId)
             throws PaymentValidationException, StripeException;
 
-    Map<String, Object> getSubscriptionById(String subscriptionId)
-            throws PaymentValidationException, StripeException;
-
-    Map<String, Object> cancelSubscription(String subscriptionId, boolean cancelImmediately)
-            throws PaymentValidationException, StripeException;
-
     List<Map<String, String>> getPaymentReceipts(String customerId, int page, int size) throws PaymentValidationException;
 
     String getPaymentReceipt(String paymentIntentId) throws PaymentValidationException, StripeException;
+
+    Map<String, String> createSetupIntent(String customerId) throws PaymentValidationException, StripeException;
 }

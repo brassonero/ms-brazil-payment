@@ -60,9 +60,12 @@ public class FormSubmissionController {
         bot.setCustomMessage("default");
         bot.setMessage("Welcome! Select the desired option:");
         workspace.setBots(List.of(bot));
-
         workspace.setContacts(1000);
-        workspace.setKeyName(form.getDescription());
+        String keyName = form.getBusinessName()
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]", "")
+                .trim();
+        workspace.setKeyName(keyName);
         workspace.setMultipleAgents(true);
         workspace.setMultipleSupervisors(true);
         workspace.setName(form.getBusinessName());

@@ -3,6 +3,7 @@ package com.ebitware.chatbotpayments.service.impl;
 import com.ebitware.chatbotpayments.entity.BrlCustomer;
 import com.ebitware.chatbotpayments.entity.FormSubmission;
 import com.ebitware.chatbotpayments.exception.PaymentValidationException;
+import com.ebitware.chatbotpayments.model.PaymentSuccessEvent;
 import com.ebitware.chatbotpayments.repository.billing.BrlCustomerRepository;
 import com.ebitware.chatbotpayments.repository.billing.BrlPaymentRepository;
 import com.ebitware.chatbotpayments.repository.billing.BrlSubscriptionRepository;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -37,6 +39,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final BrlPaymentRepository brlPaymentRepository;
     private final BrlSubscriptionRepository brlSubscriptionRepository;
     private final FormSubmissionRepository formSubmissionRepository;
+    private final PaymentSuccessEmailService emailService;
 
     public PaymentServiceImpl(
             @Value("${stripe.secret-key}") String stripeSecretKey,
@@ -45,7 +48,7 @@ public class PaymentServiceImpl implements PaymentService {
             @Value("${payment.max-amount}") long maxAmount,
             BrlCustomerRepository brlCustomerRepository,
             BrlPaymentRepository brlPaymentRepository,
-            BrlSubscriptionRepository brlSubscriptionRepository, FormSubmissionRepository formSubmissionRepository
+            BrlSubscriptionRepository brlSubscriptionRepository, FormSubmissionRepository formSubmissionRepository, PaymentSuccessEmailService emailService
     ) {
         this.currency = currency;
         this.minAmount = minAmount;
@@ -54,10 +57,9 @@ public class PaymentServiceImpl implements PaymentService {
         this.brlPaymentRepository = brlPaymentRepository;
         this.brlSubscriptionRepository = brlSubscriptionRepository;
         this.formSubmissionRepository = formSubmissionRepository;
+        this.emailService = emailService;
         Stripe.apiKey = stripeSecretKey;
     }
-
-    // TODO: AMEX
 
     @Override
     public List<Map<String, Object>> listPaymentMethodsFormatted(String customerId)
@@ -147,9 +149,26 @@ public class PaymentServiceImpl implements PaymentService {
                 brlCustomerRepository.findByDocumentAndDocumentType(document, documentType);
 
         if (existingCustomer.isPresent()) {
+            BrlCustomer customer = existingCustomer.get();
             log.info("Found existing customer with document {} and type {}",
                     document, documentType);
-            return existingCustomer.get().getId();
+
+            // Create or update metadata with new person_id
+            Map<String, String> updatedMetadata = new HashMap<>(customer.getMetadata());
+            updatedMetadata.put("person_id", personId.toString());
+
+            // Always update the record with the new person_id and metadata
+            brlCustomerRepository.save(
+                    customer.getId(),
+                    document,
+                    documentType,
+                    cardholderName,
+                    updatedMetadata,
+                    personId
+            );
+            log.info("Updated customer {} with new personId {}", customer.getId(), personId);
+
+            return customer.getId();
         }
 
         log.info("Creating new customer for document {} and type {}",
@@ -248,6 +267,10 @@ public class PaymentServiceImpl implements PaymentService {
                     paymentIntent.getMetadata()
             );
 
+            if ("succeeded".equals(paymentIntent.getStatus())) {
+                sendSuccessEmails(payload, customerId, amount);
+            }
+
             return handleOneTimePaymentStatus(paymentIntent, amount);
         } catch (StripeException e) {
             log.error("Error creating payment intent: {}", e.getMessage());
@@ -284,12 +307,61 @@ public class PaymentServiceImpl implements PaymentService {
                     subscription.getMetadata()
             );
 
+            if ("active".equals(subscription.getStatus()) || "trialing".equals(subscription.getStatus())) {
+                Price price = Price.retrieve(priceId);
+                sendSuccessEmails(payload, customerId, price.getUnitAmount());
+            }
+
             return handleSubscriptionStatus(subscription);
 
         } catch (StripeException e) {
             log.error("Stripe subscription error: {}", e.getMessage());
             throw new PaymentValidationException("Erro ao criar assinatura: " + e.getMessage());
         }
+    }
+
+    private void sendSuccessEmails(Map<String, Object> payload, String customerId, Long amount) {
+        try {
+            FormSubmission form = formSubmissionRepository.findByPersonId(
+                            Integer.parseInt(payload.get("personId").toString()))
+                    .orElseThrow(() -> new PaymentValidationException("Form submission not found"));
+
+            PaymentSuccessEvent event = PaymentSuccessEvent.builder()
+                    .companyName(form.getBusinessName())
+                    .bmId(form.getFacebookManagerNo())
+                    .commercialName(form.getDisplayName())
+                    .phone(form.getPhone())
+                    .email(form.getCorporateEmail())
+                    .website(form.getWebsite())
+                    .address(form.getAddress())
+                    .vertical(form.getVertical())
+                    .businessDescription(form.getDescription())
+                    .planName(String.valueOf(payload.getOrDefault("planName", "Basic")))
+                    .planValue(formatAmount(amount))
+                    .currency(currency.toUpperCase())
+                    .contractPeriod(String.valueOf(payload.getOrDefault("contractPeriod", "Monthly")))
+                    .startDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                    .endDate(LocalDate.now().plusMonths(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                    .agents(String.valueOf(payload.getOrDefault("agents", "1")))
+                    .addons(String.valueOf(payload.getOrDefault("addons", "Basic")))
+                    .monthlyVolume(String.valueOf(payload.getOrDefault("monthlyVolume", "1000")))
+                    .channels(String.valueOf(payload.getOrDefault("channels", "WhatsApp")))
+                    .paymentDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")))
+                    .setupFee(formatAmount(amount))
+                    .customerEmail(form.getCorporateEmail())
+                    .build();
+
+            emailService.sendPaymentSuccessEmails(event);
+            log.info("Success emails sent for payment from customer: {}", customerId);
+        } catch (Exception e) {
+            log.error("Error sending success emails: {}", e.getMessage());
+        }
+    }
+
+    private String formatAmount(Long amount) {
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+        formatter.setCurrency(Currency.getInstance(currency.toUpperCase()));
+        return formatter.format(amount / 100.0);
     }
 
     private Map<String, Object> handleOneTimePaymentStatus(PaymentIntent paymentIntent, Long amount)
@@ -333,81 +405,6 @@ public class PaymentServiceImpl implements PaymentService {
         } else {
             log.error("Unexpected subscription status: {}", status);
             throw new PaymentValidationException("Status da assinatura inválido: " + status);
-        }
-    }
-
-    @Override
-    public Map<String, Object> getSubscriptionById(String subscriptionId)
-            throws PaymentValidationException, StripeException {
-        if (subscriptionId == null || subscriptionId.trim().isEmpty()) {
-            throw new PaymentValidationException("SubscriptionId é obrigatório");
-        }
-
-        try {
-            Subscription subscription = Subscription.retrieve(subscriptionId);
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", subscription.getId());
-            response.put("status", subscription.getStatus());
-            response.put("customer_id", subscription.getCustomer());
-            response.put("currency", subscription.getCurrency());
-            response.put("current_period_end", subscription.getCurrentPeriodEnd());
-            response.put("cancel_at_period_end", subscription.getCancelAtPeriodEnd());
-
-            if (subscription.getCanceledAt() != null) {
-                response.put("canceled_at", subscription.getCanceledAt());
-            }
-
-            return response;
-        } catch (StripeException e) {
-            log.error("Error retrieving subscription: {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public Map<String, Object> cancelSubscription(String subscriptionId, boolean cancelImmediately)
-            throws PaymentValidationException, StripeException {
-        if (subscriptionId == null || subscriptionId.trim().isEmpty()) {
-            throw new PaymentValidationException("SubscriptionId é obrigatório");
-        }
-
-        try {
-            Subscription subscription = Subscription.retrieve(subscriptionId);
-            Subscription canceledSubscription;
-
-            if (cancelImmediately) {
-                canceledSubscription = subscription.cancel();
-            } else {
-                SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
-                        .setCancelAtPeriodEnd(true)
-                        .build();
-                canceledSubscription = subscription.update(params);
-            }
-
-            Optional<BrlCustomer> customerOpt = brlCustomerRepository.findById(canceledSubscription.getCustomer());
-
-            if (customerOpt.isPresent()) {
-                brlSubscriptionRepository.save(
-                        canceledSubscription.getId(),
-                        canceledSubscription.getCustomer(),
-                        canceledSubscription.getStatus(),
-                        canceledSubscription.getItems().getData().get(0).getPrice().getId(),
-                        canceledSubscription.getCurrency(),
-                        canceledSubscription.getDefaultPaymentMethod(),
-                        canceledSubscription.getMetadata()
-                );
-            }
-
-            return Map.of(
-                    "subscription_id", canceledSubscription.getId(),
-                    "status", canceledSubscription.getStatus(),
-                    "cancel_at_period_end", canceledSubscription.getCancelAtPeriodEnd(),
-                    "current_period_end", canceledSubscription.getCurrentPeriodEnd()
-            );
-
-        } catch (StripeException e) {
-            log.error("Error canceling subscription: {}", e.getMessage());
-            throw e;
         }
     }
 
@@ -614,5 +611,23 @@ public class PaymentServiceImpl implements PaymentService {
             log.error("Error retrieving Stripe receipt: {}", e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public Map<String, String> createSetupIntent(String customerId) throws PaymentValidationException, StripeException {
+        if (customerId == null || customerId.trim().isEmpty()) {
+            throw new PaymentValidationException("CustomerId é obrigatório");
+        }
+
+        SetupIntentCreateParams params = SetupIntentCreateParams.builder()
+                .setCustomer(customerId)
+                .addPaymentMethodType("card")
+                .build();
+
+        SetupIntent setupIntent = SetupIntent.create(params);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("clientSecret", setupIntent.getClientSecret());
+        return response;
     }
 }
