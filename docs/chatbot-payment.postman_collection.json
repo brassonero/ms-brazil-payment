@@ -1,0 +1,620 @@
+{
+	"info": {
+		"_postman_id": "1a19ddc0-15d6-4ea9-82cd-eb99ff8e7f7f",
+		"name": "chatbot-payment",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "19283099"
+	},
+	"item": [
+		{
+			"name": "[dev] form_submission",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"businessName\": \"Helomeb Bemoleh\",\n    \"displayName\": \"Victoria Aguilar Solis\",\n    \"corporateEmail\": \"helomeb435@gufutu.com\",\n    \"website\": \"https://victorizacion.com\",\n    \"description\": \"agencia de arte\",\n    \"facebookManagerNo\": \"234234\",\n    \"phone\": \"1234567890\",\n    \"address\": \"Revolucion 116\",\n    \"vertical\": \"Arte\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/forms/submit",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"forms",
+						"submit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] image-post",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/latou/OneDrive/Escritorio/meow.png"
+						},
+						{
+							"key": "personId",
+							"value": "1598",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/media",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"media"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] image-get",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept-Language",
+						"value": "en"
+					}
+				],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/media/59507480meow.jpg",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"media",
+						"59507480meow.jpg"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] person-info",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/customers/1598/info",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"customers",
+						"1598",
+						"info"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] catalog-plans",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/plans/catalog",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"plans",
+						"catalog"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] catalog-packages",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/packages/catalog",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"packages",
+						"catalog"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] payment-create_products",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"TEST ANUAL\",\n    \"description\": \"Pak TEST\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments/products",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments",
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] payment-create_prices",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"unitAmount\": 100.50,\n    \"currency\": \"brl\",\n    \"interval\": \"month\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments/products/1/prices",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments",
+						"products",
+						"1",
+						"prices"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] paymet-one_time",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"paymentMethodId\": \"pm_1QpZR0QL0OOvl0KQdbpBHQu4\",\n    \"amount\": 18800000,\n    \"document\": \"52998224725\",\n    \"documentType\": \"cpf\",\n    \"cardholderName\": \"Estefania Gamez\",\n    \"personId\": 1596,\n    \"metadata\": {\n        \"tax_id_type\": \"CPF\",\n        \"tax_id\": \"52998224725\",\n        \"document_type\": \"CPF\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] payment-subscription",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"paymentMethodId\": \"pm_1QpFH9QL0OOvl0KQ6suCc7GT\",\n    \"document\": \"52998224725\",\n    \"documentType\": \"cpf\",\n    \"cardholderName\": \"Diana Abarca\",\n    \"isSubscription\": true,\n    \"priceId\": \"price_1QnL6SQL0OOvl0KQAvrlIIAU\",\n    \"personId\": 1596,\n    \"metadata\": {\n        \"tax_id_type\": \"CPF\",\n        \"tax_id\": \"52998224725\",\n        \"document_type\": \"CPF\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] payment-methods",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments/cus_RhYncwUEmxXvtY/payment-methods",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments",
+						"cus_RhYncwUEmxXvtY",
+						"payment-methods"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] payment-setup_intent",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments/cus_RhYncwUEmxXvtY/setup-intent",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments",
+						"cus_RhYncwUEmxXvtY",
+						"setup-intent"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] payment-receip",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments/receipts/pi_3QoADkQL0OOvl0KQ1dqs12ZY/download",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments",
+						"receipts",
+						"pi_3QoADkQL0OOvl0KQ1dqs12ZY",
+						"download"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] payment-history",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/payments/receipts?customerId=cus_Ri1CdKhe02IzEh",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"payments",
+						"receipts"
+					],
+					"query": [
+						{
+							"key": "customerId",
+							"value": "cus_Ri1CdKhe02IzEh"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] invoice-create",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n           \"fiscalRegime\": \"Simples Nacional\",\n           \"businessName\": \"Nome da Empresa LTDA\",\n           \"idType\": \"CNPJ\",\n           \"idNumber\": \"12345678000199\",\n           \"billingEmail\": \"clientetestasasasa@empresa.com.br\",\n           \"phone\": \"5511987654321\",\n           \"personId\": 1596,\n           \"address\": {\n               \"street\": \"Avenida Paulista, 1000\",\n               \"postalCode\": \"01310100\",\n               \"country\": \"Brasil\",\n               \"state\": \"São Paulo\",\n               \"city\": \"São Paulo\"\n           }\n         }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/invoices/billing",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"invoices",
+						"billing"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] invoice-update",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n           \"taxId\": \"GOGI910214G23\",\n           \"businessName\": \"Ixchela Gomez Garcia\",\n           \"fiscalRegime\": \"Fiscal\",\n           \"cfdiUsage\": \"Despesas gerais\",\n           \"address\": {\n               \"street\": \"Cedro 1105\",\n               \"neighborhood\": \"Lindavista\",\n               \"postalCode\": \"43845\",\n               \"country\": \"México\",\n               \"state\": \"Hidalgo\",\n               \"city\": \"México\"\n           }\n         }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/invoices/billing/clientetestasasasa@empresa.com.br",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"invoices",
+						"billing",
+						"clientetestasasasa@empresa.com.br"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] invoices-info",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/invoices/info/clientetesta@empresa.com.br",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"invoices",
+						"info",
+						"clientetesta@empresa.com.br"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[dev] dashboard-info",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://management-dev.broadcasterbot.com/paymentsApi/webhook/cus_Ri1CdKhe02IzEh/details",
+					"protocol": "https",
+					"host": [
+						"management-dev",
+						"broadcasterbot",
+						"com"
+					],
+					"path": [
+						"paymentsApi",
+						"webhook",
+						"cus_Ri1CdKhe02IzEh",
+						"details"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

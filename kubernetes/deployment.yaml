@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stripe-payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stripe-payment-service
+  template:
+    metadata:
+      labels:
+        app: stripe-payment-service
+    spec:
+      containers:
+        - name: stripe-payment-service
+          image: stripe-payment-service:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-payment-secrets
+                  key: DB_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-payment-secrets
+                  key: DB_PASSWORD
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-payment-secrets
+                  key: STRIPE_SECRET_KEY
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: stripe-payment-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stripe-payment-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: stripe-payment-service
