@@ -1,26 +1,25 @@
 package com.ebitware.chatbotpayments.entity;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.OffsetDateTime;
+
+import java.time.Instant;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class BrlSubscription {
-    private Long id;
-    private String stripeSubscriptionId;
-    private Long customerId;
-    private String stripeCustomerId;
-    private Long priceId;
-    private String stripePriceId;
+    private String id;
+    private String customerId;
     private String status;
-    private OffsetDateTime currentPeriodStart;
-    private OffsetDateTime currentPeriodEnd;
-    private boolean cancelAtPeriodEnd;
-    private JsonNode metadata;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+    private String priceId;
+    private String currency;
+    private String paymentMethodId;
+    private Map<String, String> metadata;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

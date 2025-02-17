@@ -1,8 +1,8 @@
 package com.ebitware.chatbotpayments.service;
 
 import com.ebitware.chatbotpayments.exception.PaymentValidationException;
-import com.ebitware.chatbotpayments.model.AddPaymentMethodRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ebitware.chatbotpayments.model.ChangeSubscriptionRequest;
+import com.ebitware.chatbotpayments.model.TransactionDTO;
 import com.stripe.exception.StripeException;
 
 import java.util.List;
@@ -23,4 +23,25 @@ public interface PaymentService {
     String getPaymentReceipt(String paymentIntentId) throws PaymentValidationException, StripeException;
 
     Map<String, String> createSetupIntent(String customerId) throws PaymentValidationException, StripeException;
+
+    String getSubscriptionReceipt(String subscriptionId) throws PaymentValidationException, StripeException;
+
+    Map<String, Object> changeSubscription(String subscriptionId, ChangeSubscriptionRequest request)
+            throws PaymentValidationException, StripeException;
+
+    Map<String, String> getPlanDetails(String customerId) throws PaymentValidationException;
+
+    void deletePaymentMethod(String userId, String paymentMethodId)
+            throws PaymentValidationException, StripeException;
+
+    Map<String, Object> getSubscriptionStatus(String userId)
+            throws PaymentValidationException, StripeException;
+
+    Map<String, Object> cancelSubscription(String userId, String subscriptionId, boolean cancelAtPeriodEnd)
+            throws PaymentValidationException, StripeException;
+
+    void updateDefaultPaymentMethod(String userId, String paymentMethodId)
+            throws PaymentValidationException, StripeException;
+
+    List<TransactionDTO> getCustomerTransactions(String customerId) throws StripeException;
 }

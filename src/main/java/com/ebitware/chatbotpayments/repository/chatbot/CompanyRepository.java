@@ -52,11 +52,11 @@ public class CompanyRepository {
                 INSERT INTO chatbot.person (
                     first_name, last_name, second_last_name, username,
                     password, email, company_id, role_id,
-                    created_at, updated_at, active
+                    created_at, updated_at, active, is_super
                 ) VALUES (
                     :firstName, :lastName, :secondLastName, :username,
                     :password, :email, :companyId, :roleId,
-                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true, true
                 ) RETURNING id as person_id, role_id
                 """;
 
@@ -68,7 +68,7 @@ public class CompanyRepository {
                 .addValue("password", passwordEncoder.encode(password))
                 .addValue("email", request.getUser().getEmail())
                 .addValue("companyId", companyId)
-                .addValue("roleId", 1); // Default role ID for new users
+                .addValue("roleId", 1);
 
         Map<String, Object> result = jdbcTemplate.queryForMap(createUserSql, userParams);
         Long personId = ((Number) result.get("person_id")).longValue();

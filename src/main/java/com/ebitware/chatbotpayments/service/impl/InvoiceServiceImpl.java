@@ -55,7 +55,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setFiscalRegime(request.getFiscalRegime());
         invoice.setBusinessName(request.getBusinessName());
         invoice.setIdType(request.getIdType());
-        invoice.setIdNumber(request.getIdNumber());
+
+        invoice.setIdNumber(sanitizeCpfCnpj(request.getIdNumber()));
+
         invoice.setBillingEmail(request.getBillingEmail());
         invoice.setPhone(request.getPhone());
 
@@ -74,5 +76,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         log.debug("Mapped request to invoice: {}", invoice);
         return invoice;
+    }
+
+    public static String sanitizeCpfCnpj(String cpfCnpj) {
+        if (cpfCnpj == null) {
+            return null;
+        }
+        return cpfCnpj.replaceAll("[^0-9]", "");
     }
 }

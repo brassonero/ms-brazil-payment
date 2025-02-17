@@ -3,13 +3,22 @@ package com.ebitware.chatbotpayments.controller;
 import com.ebitware.chatbotpayments.entity.BrlPrice;
 import com.ebitware.chatbotpayments.entity.BrlProduct;
 import com.ebitware.chatbotpayments.exception.*;
-import com.ebitware.chatbotpayments.model.AddPaymentMethodRequest;
+import com.ebitware.chatbotpayments.model.ChangeSubscriptionRequest;
 import com.ebitware.chatbotpayments.model.CreatePriceRequest;
 import com.ebitware.chatbotpayments.model.CreateProductRequest;
+import com.ebitware.chatbotpayments.model.TransactionDTO;
 import com.ebitware.chatbotpayments.service.PaymentService;
 import com.ebitware.chatbotpayments.service.impl.BrlPriceService;
 import com.ebitware.chatbotpayments.service.impl.BrlProductService;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Customer;
+import com.stripe.model.PaymentMethod;
+import com.stripe.model.Subscription;
+import com.stripe.model.SubscriptionCollection;
+import com.stripe.param.CustomerUpdateParams;
+import com.stripe.param.PaymentMethodAttachParams;
+import com.stripe.param.SubscriptionListParams;
+import com.stripe.param.SubscriptionUpdateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +35,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/payments")
 @RequiredArgsConstructor
-@CrossOrigin(
-        origins = {"*"},
-        allowedHeaders = {"Content-Type", "Accept", "Authorization", "Origin"},
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS}
-)
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -119,54 +122,6 @@ public class PaymentController {
         return new ResponseEntity<>(errorResponse, e.getStatus());
     }
 
-    @GetMapping("/history")
-    public ResponseEntity<List<Map<String, Object>>> getPaymentHistory() {
-        List<Map<String, Object>> paymentHistory = new ArrayList<>();
-
-        for (int i = 0; i < 5; i++) {
-            Map<String, Object> payment = new HashMap<>();
-            payment.put("date", "17 Mar 2024");
-            payment.put("receiptNumber", "14345980");
-            payment.put("totalAmount", "$14345");
-            paymentHistory.add(payment);
-        }
-
-        return ResponseEntity.ok(paymentHistory);
-    }
-
-    @GetMapping("/{userId}/methods")
-    public ResponseEntity<List<Map<String, Object>>> getPaymentMethods(@PathVariable String userId) {
-
-        List<Map<String, Object>> paymentMethods = new ArrayList<>();
-
-        Map<String, Object> method1 = new HashMap<>();
-        method1.put("cardType", "MasterCard");
-        method1.put("cardNumber", "**** **** **** 1234");
-        method1.put("cardholderName", "Ixchel Gómez García");
-        method1.put("bank", "Santander");
-        method1.put("isSelected", true);
-
-        Map<String, Object> method2 = new HashMap<>();
-        method2.put("cardType", "Visa");
-        method2.put("cardNumber", "**** **** **** 3478");
-        method2.put("cardholderName", "Ixchel Gómez García");
-        method2.put("bank", "BBVA");
-        method2.put("isSelected", false);
-
-        Map<String, Object> method3 = new HashMap<>();
-        method3.put("cardType", "Visa");
-        method3.put("cardNumber", "**** **** **** 2389");
-        method3.put("cardholderName", "Ixchel Gómez García");
-        method3.put("bank", "HSBC");
-        method3.put("isSelected", false);
-
-        paymentMethods.add(method1);
-        paymentMethods.add(method2);
-        paymentMethods.add(method3);
-
-        return ResponseEntity.ok(paymentMethods);
-    }
-
     @GetMapping("/{userId}/payment-methods")
     public ResponseEntity<?> listUserPaymentMethods(@PathVariable String userId) {
         try {
@@ -185,19 +140,13 @@ public class PaymentController {
     }
 
     @GetMapping("/receipts")
-    public ResponseEntity<?> getPaymentReceipts(
-            @RequestParam String customerId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<List<TransactionDTO>> getCustomerTransactions(
+            @RequestParam String customerId) {
         try {
-            List<Map<String, String>> receipts = paymentService.getPaymentReceipts(customerId, page, size);
-            return ResponseEntity.ok(receipts);
-        } catch (PaymentValidationException e) {
-            log.error("Validation error retrieving receipts: {}", e.getMessage());
-            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (Exception e) {
-            log.error("Unexpected error retrieving receipts: {}", e.getMessage(), e);
-            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+            List<TransactionDTO> transactions = paymentService.getCustomerTransactions(customerId);
+            return ResponseEntity.ok(transactions);
+        } catch (StripeException e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -234,6 +183,180 @@ public class PaymentController {
         } catch (StripeException e) {
             log.error("Stripe error creating setup intent: {}", e.getMessage(), e);
             return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
+        }
+    }
+
+    @GetMapping("/subscriptions/{subscriptionId}/receipts")
+    public ResponseEntity<?> downloadSubscriptionReceipt(@PathVariable String subscriptionId) {
+        try {
+            String receiptUrl = paymentService.getSubscriptionReceipt(subscriptionId);
+            if (receiptUrl != null) {
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create(receiptUrl))
+                        .build();
+            }
+            return ResponseEntity.notFound().build();
+        } catch (PaymentValidationException e) {
+            log.error("Validation error retrieving subscription receipt: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error retrieving subscription receipt: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving subscription receipt: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @PutMapping("/subscriptions/{subscriptionId}/change")
+    public ResponseEntity<?> changeSubscription(
+            @PathVariable String subscriptionId,
+            @Valid @RequestBody ChangeSubscriptionRequest payload
+    ) {
+        log.info("Received subscription change request for subscription: {}", subscriptionId);
+
+        try {
+            Map<String, Object> result = paymentService.changeSubscription(subscriptionId, payload);
+            return ResponseEntity.ok(result);
+        } catch (PaymentValidationException e) {
+            log.error("Subscription change validation error: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error during subscription change: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
+        } catch (Exception e) {
+            log.error("Unexpected error during subscription change: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @GetMapping("/subscriptions/{customerId}/plan-details")
+    public ResponseEntity<?> getPlanDetails(@PathVariable String customerId) {
+        log.info("Retrieving plan details for customer: {}", customerId);
+
+        try {
+            Map<String, String> details = paymentService.getPlanDetails(customerId);
+            return ResponseEntity.ok(details);
+        } catch (PaymentValidationException e) {
+            log.error("Validation error retrieving plan details: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error retrieving plan details: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @DeleteMapping("/{userId}/payment-methods/{paymentMethodId}")
+    public ResponseEntity<?> deletePaymentMethod(
+            @PathVariable String userId,
+            @PathVariable String paymentMethodId) {
+        try {
+            paymentService.deletePaymentMethod(userId, paymentMethodId);
+            return ResponseEntity.noContent().build();
+        } catch (PaymentValidationException e) {
+            log.error("Validation error deleting payment method: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error deleting payment method: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
+        } catch (Exception e) {
+            log.error("Unexpected error deleting payment method: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @GetMapping("/{userId}/subscription-status")
+    public ResponseEntity<?> getSubscriptionStatus(@PathVariable String userId) {
+        try {
+            Map<String, Object> status = paymentService.getSubscriptionStatus(userId);
+            return ResponseEntity.ok(status);
+        } catch (PaymentValidationException e) {
+            log.error("Validation error getting subscription status: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error getting subscription status: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
+        } catch (Exception e) {
+            log.error("Unexpected error getting subscription status: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @DeleteMapping("/{userId}/subscriptions/{subscriptionId}")
+    public ResponseEntity<?> cancelSubscription(
+            @PathVariable String userId,
+            @PathVariable String subscriptionId,
+            @RequestParam(defaultValue = "false") boolean cancelAtPeriodEnd) {
+        try {
+            Map<String, Object> result = paymentService.cancelSubscription(userId, subscriptionId, cancelAtPeriodEnd);
+            return ResponseEntity.ok(result);
+        } catch (PaymentValidationException e) {
+            log.error("Validation error canceling subscription: {}", e.getMessage());
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (StripeException e) {
+            log.error("Stripe error canceling subscription: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
+        } catch (Exception e) {
+            log.error("Unexpected error canceling subscription: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+        }
+    }
+
+    @PutMapping("/{userId}/payment-methods/{paymentMethodId}/make-default")
+    public ResponseEntity<?> updateDefaultPaymentMethod(
+            @PathVariable String userId,
+            @PathVariable String paymentMethodId) {
+        try {
+            PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
+
+            if (paymentMethod.getCustomer() == null) {
+                PaymentMethodAttachParams attachParams = PaymentMethodAttachParams.builder()
+                        .setCustomer(userId)
+                        .build();
+                paymentMethod = paymentMethod.attach(attachParams);
+            }
+            // If it's attached to a different customer, detach and reattach
+            else if (!userId.equals(paymentMethod.getCustomer())) {
+                paymentMethod = paymentMethod.detach();
+                PaymentMethodAttachParams attachParams = PaymentMethodAttachParams.builder()
+                        .setCustomer(userId)
+                        .build();
+                paymentMethod = paymentMethod.attach(attachParams);
+            }
+
+            CustomerUpdateParams customerParams = CustomerUpdateParams.builder()
+                    .setInvoiceSettings(
+                            CustomerUpdateParams.InvoiceSettings.builder()
+                                    .setDefaultPaymentMethod(paymentMethodId)
+                                    .build()
+                    )
+                    .build();
+
+            Customer.retrieve(userId).update(customerParams);
+
+            SubscriptionListParams params = SubscriptionListParams.builder()
+                    .setCustomer(userId)
+                    .setStatus(SubscriptionListParams.Status.ACTIVE)
+                    .build();
+
+            SubscriptionCollection subscriptions = Subscription.list(params);
+            for (Subscription subscription : subscriptions.getData()) {
+                SubscriptionUpdateParams updateParams = SubscriptionUpdateParams.builder()
+                        .setDefaultPaymentMethod(paymentMethodId)
+                        .build();
+                subscription.update(updateParams);
+            }
+
+            log.info("Successfully updated default payment method to {} for user {}",
+                    paymentMethodId, userId);
+
+            return ResponseEntity.ok().build();
+        } catch (StripeException e) {
+            log.error("Stripe error updating default payment method: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), e.getCode());
+        } catch (Exception e) {
+            log.error("Unexpected error updating default payment method: {}", e.getMessage(), e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
         }
     }
 }

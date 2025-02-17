@@ -1,6 +1,7 @@
 package com.ebitware.chatbotpayments.repository.billing;
 
 import com.ebitware.chatbotpayments.model.PricesDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -11,6 +12,7 @@ import java.util.List;
 
 import static com.ebitware.chatbotpayments.constants.SqlConstants.SELECT_ALL_WA_PRICES;
 
+@Slf4j
 @Repository
 public class PricesCatalogRepository {
 
@@ -30,4 +32,6 @@ public class PricesCatalogRepository {
     public List<PricesDTO> findAllPricing() {
         return jdbcTemplate.query(SELECT_ALL_WA_PRICES, pricingRowMapper);
     }
+
+
 }

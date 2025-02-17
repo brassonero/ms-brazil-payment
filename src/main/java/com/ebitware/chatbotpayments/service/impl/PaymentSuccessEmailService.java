@@ -26,6 +26,7 @@ public class PaymentSuccessEmailService {
 
     public void sendPaymentSuccessEmails(PaymentSuccessEvent event) {
         try {
+            event = updateAgentsBasedOnPlan(event);
             sendInternalNotification(event);
             sendCustomerConfirmation(event);
         } catch (Exception e) {
@@ -34,8 +35,57 @@ public class PaymentSuccessEmailService {
         }
     }
 
+    private PaymentSuccessEvent updateAgentsBasedOnPlan(PaymentSuccessEvent event) {
+        if ("One-Time".equals(event.getContractPeriod())) {
+            return rebuildEventWithAgents(event, "N/A", 0);  // The 0 won't matter as it'll be displayed as "N/A"
+        }
+
+        String planName = event.getPlanName();
+        if (planName == null || planName.trim().isEmpty()) {
+            throw new RuntimeException("Plan name is required");
+        }
+
+        int agents = switch (planName.toLowerCase()) {
+            case "growth" -> 5;
+            case "business" -> 10;
+            case "enterprise" -> 15;
+            default -> throw new RuntimeException("Invalid plan name: " + planName);
+        };
+
+        return rebuildEventWithAgents(event, planName, agents);
+    }
+
+    private PaymentSuccessEvent rebuildEventWithAgents(PaymentSuccessEvent event, String planName, int agents) {
+        boolean isOneTime = "One-Time".equals(event.getContractPeriod());
+
+        return PaymentSuccessEvent.builder()
+                .companyName(event.getCompanyName())
+                .bmId(event.getBmId())
+                .commercialName(event.getCommercialName())
+                .phone(event.getPhone())
+                .email(event.getEmail())
+                .website(event.getWebsite())
+                .address(event.getAddress())
+                .vertical(event.getVertical())
+                .businessDescription(event.getBusinessDescription())
+                .planName(isOneTime ? "N/A" : planName)
+                .planValue(event.getPlanValue())
+                .currency(event.getCurrency())
+                .contractPeriod(event.getContractPeriod())
+                .startDate(event.getStartDate())
+                .endDate(event.getEndDate())
+                .agents(isOneTime ? "N/A" : String.valueOf(agents))
+                .addons(event.getAddons())
+                .monthlyVolume(event.getMonthlyVolume())
+                .channels(event.getChannels())
+                .paymentDate(event.getPaymentDate())
+                .setupFee(event.getSetupFee())
+                .customerEmail(event.getEmail())
+                .build();
+    }
+
     private void sendInternalNotification(PaymentSuccessEvent event) {
-        String subject = "Nuevo Cliente - Confirmación de Pago";
+        String subject = "Novo Cliente - Confirmação de Pagamento";
         String body = buildInternalEmailBody(event);
         emailService.sendEmail(RECIPIENT_EMAIL, subject, body, "text/html");
     }
@@ -43,7 +93,7 @@ public class PaymentSuccessEmailService {
     private void sendCustomerConfirmation(PaymentSuccessEvent event) {
         String subject = "Bem-vindo à CM Móvil!";
         String body = buildCustomerEmailBody(event);
-        emailService.sendEmail(RECIPIENT_EMAIL, subject, body, "text/html");
+        emailService.sendEmail(event.getEmail(), subject, body, "text/html");
     }
 
     private String buildInternalEmailBody(PaymentSuccessEvent event) {
@@ -58,8 +108,8 @@ public class PaymentSuccessEmailService {
                             <table width="100%%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td align="center" style="padding-bottom: 30px;">
-                                        <img src="https://drive.google.com/file/d/15tJwE9PHWkIfsVjKC11CkJTMGJs0KeRN/view" alt="Broadcaster Bot Logo" style="max-width: 200px; height: auto; margin-right: 20px;">
-                                        <img src="https://drive.google.com/file/d/1QWxrXPrnn6tqc-vTTnWBZK3kYLOjmKer/view" alt="Meta Business Partners Logo" style="max-width: 200px; height: auto;">
+                                        <img src="https://raw.githubusercontent.com/brassonero/img/refs/heads/main/dace1567fff6a7303ee73afdd202c846.png" alt="Broadcaster Bot Logo" style="max-width: 200px; height: auto; margin-right: 20px;">
+                                        <img src="https://raw.githubusercontent.com/brassonero/img/refs/heads/main/da1317b30912d518e73aa6b22d1407dc.png" alt="Meta Business Partners Logo" style="max-width: 200px; height: auto;">
                                     </td>
                                 </tr>
                             </table>                
@@ -86,8 +136,10 @@ public class PaymentSuccessEmailService {
                 <h3 style="color: #000000;">Ubicación</h3>
                 <ul>
                     <li style="color: #000000;">Dirección: %s</li>
-                    <li style="color: #000000;">Información Comercial: %s</li>
-                    <li style="color: #000000;">Vertical: %s</li>
+                    <li style="color: #000000;">Información Comercial:</li>
+                    <ul>
+                        <li style="color: #000000;">Vertical: %s</li>
+                    </ul>
                 </ul>
                 
                 <h3 style="color: #000000;">Descripción del Negocio</h3>
@@ -141,7 +193,6 @@ public class PaymentSuccessEmailService {
                 event.getEmail(),
                 event.getWebsite(),
                 event.getAddress(),
-                event.getCommercialInfo(),
                 event.getVertical(),
                 event.getBusinessDescription(),
                 event.getPlanName(),
@@ -175,8 +226,8 @@ public class PaymentSuccessEmailService {
                             <table width="100%%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td align="center" style="padding-bottom: 30px;">
-                                        <img src="https://drive.google.com/file/d/15tJwE9PHWkIfsVjKC11CkJTMGJs0KeRN/view" alt="Broadcaster Bot Logo" style="max-width: 200px; height: auto; margin-right: 20px;">
-                                        <img src="https://drive.google.com/file/d/1QWxrXPrnn6tqc-vTTnWBZK3kYLOjmKer/view" alt="Meta Business Partners Logo" style="max-width: 200px; height: auto;">
+                                        <img src="https://raw.githubusercontent.com/brassonero/img/refs/heads/main/dace1567fff6a7303ee73afdd202c846.png" alt="Broadcaster Bot Logo" style="max-width: 200px; height: auto; margin-right: 20px;">
+                                        <img src="https://raw.githubusercontent.com/brassonero/img/refs/heads/main/da1317b30912d518e73aa6b22d1407dc.png" alt="Meta Business Partners Logo" style="max-width: 200px; height: auto;">
                                     </td>
                                 </tr>
                             </table>
@@ -205,7 +256,7 @@ public class PaymentSuccessEmailService {
                 
                 <h3 style="color: #000000;">Investimento</h3>
                 <ul>
-                    <li style="color: #000000;">Valor Mensal: %s %s</li>
+                    <li style="color: #000000;">Valor: %s %s</li>
                     <li style="color: #000000;">Setup Fee: %s %s PAGO</li>
                 </ul>
                 

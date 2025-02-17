@@ -9,9 +9,7 @@ import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 public class CorsConfig {
-
-    //@Value("${cors.allowed.origins:https://admin.broadcasterbot.com}")
-    @Value("${cors.allowed.origins:http://localhost:8080}")
+    @Value("${cors.allowed.origins:https://admin-dev.broadcasterbot.com}")
     private String corsAllowedOrigins;
 
     @Bean
@@ -24,7 +22,6 @@ public class CorsConfig {
         config.addAllowedMethod("PUT");
         config.addAllowedMethod("DELETE");
         config.setAllowCredentials(true);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);

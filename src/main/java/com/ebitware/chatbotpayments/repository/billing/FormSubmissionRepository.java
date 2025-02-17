@@ -11,7 +11,6 @@ import com.ebitware.chatbotpayments.model.FormSubmissionRequest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.sql.DataSource;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,62 +45,16 @@ public class FormSubmissionRepository {
         jdbcTemplate.update(INSERT_FORM_SUBMISSION, params);
     }
 
-    public boolean emailExists(String email) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("email", email);
-
-        Integer count = jdbcTemplate.queryForObject(CHECK_EMAIL_EXISTS_DEPRECATED, params, Integer.class);
-        return count != null && count > 0;
-    }
-
-    private static final String SAVE_TOKEN =
-            "UPDATE chatbot.brl_form_submission " +
-                    "SET confirmation_token = :token, " +
-                    "token_expiry = :expiry, " +
-                    "confirmation_sent_at = CURRENT_TIMESTAMP " +
-                    "WHERE corporate_email = :email";
-
-    public void saveConfirmationToken(String email, String token, LocalDateTime expiry) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("email", email);
-        params.put("token", token);
-        params.put("expiry", expiry);
-
-        jdbcTemplate.update(SAVE_TOKEN, params);
-    }
-
-    private static final String VALIDATE_TOKEN =
-            "UPDATE chatbot.brl_form_submission " +
-                    "SET email_confirmed = true, " +
-                    "confirmed_at = CURRENT_TIMESTAMP, " +
-                    "updated_at = CURRENT_TIMESTAMP " +
-                    "WHERE confirmation_token = :token " +
-                    "AND token_expiry > CURRENT_TIMESTAMP " +
-                    "AND email_confirmed = false " +
-                    "AND confirmation_token IS NOT NULL " +
-                    "RETURNING corporate_email";
-
-    public String validateToken(String token) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("token", token);
-
-        try {
-            return jdbcTemplate.queryForObject(VALIDATE_TOKEN, params, String.class);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     public void updateFormSubmissionIds(Long companyId, Long personId, Long roleId, String email) {
         String sql = """
-            UPDATE chatbot.brl_form_submission 
-            SET company_id = :companyId,
-                person_id = :personId,
-                role_id = :roleId,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE corporate_email = :email
-              AND company_id IS NULL
-            """;
+                UPDATE chatbot.brl_form_submission 
+                SET company_id = :companyId,
+                    person_id = :personId,
+                    role_id = :roleId,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE corporate_email = :email
+                  AND company_id IS NULL
+                """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("companyId", companyId)
@@ -121,12 +74,12 @@ public class FormSubmissionRepository {
 
     public Optional<FormSubmission> findByPersonId(Integer personId) {
         String sql = """
-            SELECT id, business_name, display_name, website, corporate_email, 
-                   description, facebook_manager_no, phone, address, vertical, 
-                   logo_url, created_at, updated_at, company_id, person_id, role_id
-            FROM chatbot.brl_form_submission 
-            WHERE person_id = :personId
-            """;
+                SELECT id, business_name, display_name, website, corporate_email, 
+                       description, facebook_manager_no, phone, address, vertical, 
+                       logo_url, created_at, updated_at, company_id, person_id, role_id
+                FROM chatbot.brl_form_submission 
+                WHERE person_id = :personId
+                """;
 
         try {
             MapSqlParameterSource params = new MapSqlParameterSource()
@@ -158,12 +111,12 @@ public class FormSubmissionRepository {
 
     public int updateLogoUrl(Integer personId, String logoUrl) {
         String sql = """
-            UPDATE chatbot.brl_form_submission 
-            SET logo_url = :logoUrl,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE person_id = :personId
-            RETURNING id
-        """;
+                    UPDATE chatbot.brl_form_submission 
+                    SET logo_url = :logoUrl,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE person_id = :personId
+                    RETURNING id
+                """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("logoUrl", logoUrl)

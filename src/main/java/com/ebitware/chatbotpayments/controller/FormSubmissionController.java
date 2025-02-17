@@ -74,19 +74,21 @@ public class FormSubmissionController {
 
         UserDTO user = new UserDTO();
         String[] names = form.getDisplayName().split(" ");
-        if (names.length >= 1) {
+        if (names.length == 1) {
             user.setFirstName(names[0]);
-        }
-        if (names.length >= 2) {
+            user.setLastName("admin");
+        } else if (names.length == 2) {
+            user.setFirstName(names[0]);
             user.setLastName(names[1]);
-        }
-        if (names.length >= 3) {
+        } else if (names.length >= 3) {
+            user.setFirstName(names[0]);
+            user.setLastName(names[1]);
             user.setSecondLastName(names[2]);
         }
         user.setEmail(form.getCorporateEmail());
         workspace.setUser(user);
 
-        workspace.setWorkgroups(5);
+        workspace.setWorkgroups(1);
         workspace.setWorkgroupsActive(true);
 
         return workspace;

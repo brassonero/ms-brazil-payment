@@ -21,7 +21,7 @@ import java.util.Map;
 public class StripeWebhookController {
 
     private static final String STRIPE_SIGNATURE_HEADER = "Stripe-Signature";
-    private static final String ENDPOINT_SECRET = "whsec_af5bbf30a02e31915460727c22e140bb671b5364afbbe8a4f5e7ea1fc2cc2783";
+    private static final String ENDPOINT_SECRET = "whsec_16a8a3adf01f5570677692832fe6c8de702072aa531385a91e9cb008fa6acc89";
 
     private final WebSocketService webSocketService;
 

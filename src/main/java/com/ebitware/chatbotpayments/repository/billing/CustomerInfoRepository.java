@@ -66,4 +66,13 @@ public class CustomerInfoRepository {
             return Optional.of(new CustomerInfoDTO("", "", "", false, "", ""));
         }
     }
+
+    public boolean existsByPersonId(Integer personId) {
+        String sql = "SELECT EXISTS(SELECT 1 FROM chatbot.brl_form_submission WHERE person_id = :personId)";
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("personId", personId);
+
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, params, Boolean.class));
+    }
 }

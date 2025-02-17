@@ -24,6 +24,11 @@ public class CustomerInfoService {
             throw new IllegalArgumentException("Person ID cannot be null");
         }
 
+        log.debug("Checking if person exists with ID: {}", personId);
+        if (!customerInfoRepository.existsByPersonId(personId)) {
+            throw new CustomerNotFoundException("Person not found with ID: " + personId);
+        }
+
         log.debug("Fetching customer info for person ID: {}", personId);
         return customerInfoRepository.findCustomerInfoByPersonId(personId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found for person ID: " + personId));

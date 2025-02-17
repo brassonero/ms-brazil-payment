@@ -84,19 +84,6 @@ public class InvoiceController {
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Billing information not found.");
     }
 
-    @GetMapping("/info")
-    public ResponseEntity<Map<String, Object>> getBillingInformation() {
-        Map<String, Object> billingData = new HashMap<>();
-        billingData.put("rfc", "GOGI910412G23");
-        billingData.put("nameOrBusinessName", "Ixchel Gómez García");
-        billingData.put("taxRegime", "Moral");
-        billingData.put("cfdiUsage", "General expenses");
-        billingData.put("billingEmail", "ixchel@gmail.com");
-        billingData.put("automaticBilling", true);
-
-        return ResponseEntity.ok(billingData);
-    }
-
     @GetMapping("/info/{email}")
     public ResponseEntity<BillingInfoResponse> getBillingInfo(@PathVariable String email) {
         try {

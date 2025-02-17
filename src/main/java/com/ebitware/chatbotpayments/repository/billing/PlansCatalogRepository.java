@@ -1,8 +1,12 @@
 package com.ebitware.chatbotpayments.repository.billing;
 
 import com.ebitware.chatbotpayments.model.PlansDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -11,8 +15,22 @@ import java.util.List;
 
 import static com.ebitware.chatbotpayments.constants.SqlConstants.SELECT_ALL_PLANS;
 
+@Slf4j
 @Repository
 public class PlansCatalogRepository {
+
+    @Value("${spring.config.stripe.prices.growth.monthly}")
+    private String growthMonthly;
+    @Value("${spring.config.stripe.prices.growth.annual}")
+    private String growthAnnual;
+    @Value("${spring.config.stripe.prices.business.monthly}")
+    private String businessMonthly;
+    @Value("${spring.config.stripe.prices.business.annual}")
+    private String businessAnnual;
+    @Value("${spring.config.stripe.prices.enterprise.monthly}")
+    private String enterpriseMonthly;
+    @Value("${spring.config.stripe.prices.enterprise.annual}")
+    private String enterpriseAnnual;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -20,22 +38,23 @@ public class PlansCatalogRepository {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
+    // TODO: DB integration
     private final RowMapper<PlansDTO> planRowMapper = (rs, rowNum) -> {
-        // TODO: Integrate price table
+
         String planName = rs.getString("plan_name");
         String monthlyStripePrice;
         String annualStripePrice = switch (planName) {
             case "Growth" -> {
-                monthlyStripePrice = "price_1QnL6SQL0OOvl0KQAvrlIIAU";
-                yield "price_1QnL7LQL0OOvl0KQjrQPruGk";
+                monthlyStripePrice = growthMonthly;
+                yield growthAnnual;
             }
             case "Business" -> {
-                monthlyStripePrice = "price_1QnL6iQL0OOvl0KQmtgqyGBh";
-                yield "price_1QnL7YQL0OOvl0KQjOn3MJ96";
+                monthlyStripePrice = businessMonthly;
+                yield businessAnnual;
             }
             case "Enterprise" -> {
-                monthlyStripePrice = "price_1QnL7lQL0OOvl0KQ8XcBh0Bk";
-                yield "price_1QnL6wQL0OOvl0KQisEXOTKb";
+                monthlyStripePrice = enterpriseMonthly;
+                yield enterpriseAnnual;
             }
             default -> {
                 monthlyStripePrice = null;
@@ -84,5 +103,22 @@ public class PlansCatalogRepository {
 
     public List<PlansDTO> findAllPlans() {
         return jdbcTemplate.query(SELECT_ALL_PLANS, planRowMapper);
+    }
+
+    public Integer getIncludedAgentsByPlanName(String planName) {
+        String sql = """
+            SELECT included_agents 
+            FROM chatbot.brl_plan_catalog 
+            WHERE LOWER(plan_name) = LOWER(:planName)
+        """;
+
+        try {
+            return jdbcTemplate.queryForObject(sql,
+                    new MapSqlParameterSource("planName", planName),
+                    Integer.class);
+        } catch (EmptyResultDataAccessException e) {
+            log.warn("Plan not found: {}. Using default agent count.", planName);
+            return 1;
+        }
     }
 }

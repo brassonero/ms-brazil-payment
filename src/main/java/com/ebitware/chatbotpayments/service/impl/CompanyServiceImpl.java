@@ -128,7 +128,6 @@ public class CompanyServiceImpl implements CompanyService {
         }
     }
 
-    // TODO: Add SVG instead URL
     private String createWelcomeEmailBody(String username, String password) {
         return String.format("""
         <!DOCTYPE html>
@@ -146,8 +145,8 @@ public class CompanyServiceImpl implements CompanyService {
                         <table width="100%%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td align="center" style="padding-bottom: 30px;">
-                                    <img src="https://drive.google.com/file/d/15tJwE9PHWkIfsVjKC11CkJTMGJs0KeRN/view" alt="Broadcaster Bot Logo" style="max-width: 200px; height: auto; margin-right: 20px;">
-                                    <img src="https://drive.google.com/file/d/1QWxrXPrnn6tqc-vTTnWBZK3kYLOjmKer/view" alt="Meta Business Partners Logo" style="max-width: 200px; height: auto;">
+                                    <img src="https://raw.githubusercontent.com/brassonero/img/refs/heads/main/dace1567fff6a7303ee73afdd202c846.png" alt="Broadcaster Bot Logo" style="max-width: 200px; height: auto; margin-right: 20px;">
+                                    <img src="https://raw.githubusercontent.com/brassonero/img/refs/heads/main/da1317b30912d518e73aa6b22d1407dc.png" alt="Meta Business Partners Logo" style="max-width: 200px; height: auto;">
                                 </td>
                             </tr>
                         </table>
